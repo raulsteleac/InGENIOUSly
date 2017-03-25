@@ -1,0 +1,148 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+	
+typedef struct ctc
+ {
+	unsigned char id;
+	unsigned char mid ;
+	unsigned char mtip ;
+	unsigned char rfidval ;
+	unsigned char stare ;
+ }c;
+		
+		
+typedef struct aptcstop 
+ {
+	unsigned char id;
+	unsigned char semn[5]; 
+ }s;
+		
+		
+typedef struct aptc 
+ {
+	unsigned char id;
+	unsigned char mid ;
+	unsigned char mtip ;
+	unsigned char len; 
+	unsigned char *traseu;
+ }ap;
+	
+
+void err(char *msg)
+ {
+	perror(msg);
+	exit(0);
+ } 
+int main()
+{	
+	int soc;
+	socklen_t sndlen;
+	char buffer[255];
+	struct sockaddr_in snd;
+	//creare socket####
+	if((soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+		err("Nu merge socket");
+	//obtinere ip#### 
+	//struct ifreq ifr;
+	//char iface[] = "wlx00160a2401d4";
+   	//ifr.ifr_addr.sa_family = AF_INET;
+        //strncpy(ifr.ifr_name , iface , IFNAMSIZ-1);
+    	//ioctl(soc, SIOCGIFADDR, &ifr);
+        //setare conexiune####
+	memset((char*)&snd,0,sizeof(snd));
+	snd.sin_family=AF_INET;
+	snd.sin_port=htons(5000);
+	inet_pton(AF_INET,"id server ",*snd.sin_addr);
+	//inet_aton(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr),&snd.sin_addr.s_addr);
+	printf("\n Clientul s-a conectat la : %s si portul %d\n",inet_ntoa(snd.sin_addr),ntohs(snd.sin_port));
+	sndlen=sizeof(snd);
+	// Broadcast####
+	int broadcastPermission = 1;
+    if (setsockopt(soc, SOL_SOCKET, SO_BROADCAST, (void *) &broadcastPermission, 
+          sizeof(broadcastPermission)) < 0)
+          err("Eroare la broadcast");
+    //trimitere primei date ca semn de conectare###
+	if(sendto(soc,"Hello Server",strlen("Hello Server"),0,(struct sockaddr*)&snd,sndlen)==-1)
+		err("Nu merge sendto");
+		
+	while(1)
+		{
+	//primirea instructiuniilor
+		if(recvfrom(soc,buffer,255,0,(struct sockaddr*)&snd,&sndlen)==-1)
+			err("Nu merge recvfrom");
+	//rualre in functie de tipul telegramei
+		if(buffer[0]==1)
+		   {
+			c *y;
+   			y=(c*)malloc(sizeof(c));								
+			y=(c *)(&buffer);
+			printf("\n Id-ul este : %d\n",y->id);	
+			printf("\n MId-ul este : %d\n",y->mid);
+			printf("\n MTIP-ul este : %d\n",y->mtip);	
+			printf("\n RFId-ul este : %d%d\n",y->rfidval>>4&15,y->rfidval&15);
+			printf("\n Starea este : %d\n",y->stare);	
+			printf("\nMasina 3 tocmai a primit informatii de la o alta masina\n");	
+		    
+		    }
+			else
+				if(buffer[0]==2)
+				{ 
+				s *y;
+				y=(s *)malloc(sizeof(s));
+				y=(s *)(&buffer);
+				if(y->semn[0]==170 && y->semn[1]==187 && y->semn[2]==204 && y->semn[3]==221)
+					printf("\nA fost initializata comanda stop de catre AccesPoint , \n Semnatura a fost comfirmata\n");
+				 
+				 }
+				 else
+				   	 if(buffer[0]==3)
+				   					{	
+				   					
+				   					ap *y;
+				   					y=(ap *)malloc(sizeof(ap));
+				   					y->traseu=(unsigned char *)malloc(sizeof(unsigned char)*buffer[3]);
+				   					y->id=buffer[0];
+				   					y->mid=buffer[1];
+				   					y->mtip=buffer[2];
+				   					y->len=buffer[3];
+				   					 printf("\n Id-ul este : %d\n",y->id);	
+								 	 printf("\n MId-ul este : %d\n",y->mid);
+								 	 printf("\n TIP-ul este : %d\n",y->mtip);
+								 	 printf("\n Lungime traseu este : %d\n",y->len);
+								 	 y->traseu=(unsigned char *)(buffer+4);
+								 	 for(int i=0;i<(y->len);i++)
+								 	 printf("%d%d -> ",y->traseu[i]>>4%15,y->traseu[i]&15);
+				   					printf("end");
+								 for(int i=0;i<(y->len);i++)
+								 	{
+									switch((y->traseu[i])&15)
+									{
+									case 1:printf("\nMasina o va lua in spate\n");break;
+									case 2:printf("\nMasina o va lua la stanga\n");break;
+									case 3:printf("\nMasina o va lua in fata\n");break;
+									case 4:printf("\nMasina o va lua la dreapta\n");break;
+									}
+									if(i<(y->len-1))
+									printf("apoi");
+									}
+									printf("\nTraseul masinii tocmai ce a fost initializat\n");
+				   				
+								}
+			
+		}
+	  				
+	close(soc);
+	return 0;
+}
