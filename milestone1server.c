@@ -29,7 +29,7 @@ void* udpclientreader()
 	socklen_t receiverlen;
 	if((soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
 				err("Nu merge socket");
-	//setare conexiune , unde trimitem datele
+	//setare conexiune , de unde primim datele
 	memset((char*)&receiver,0,sizeof(receiver));
 	receiver.sin_family=AF_INET;
 	receiver.sin_port=htons(5000);
