@@ -9,7 +9,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 int flag1,flag2;
 pthread_cond_t flag1_cv,flag2_cv;
-struct container* init;
+struct container * init;
 int socr,soct;
 socklen_t receiverlen;
 socklen_t transmitterlen;
@@ -45,9 +45,6 @@ void* afis()
 // CLIENTUL UDP , AICI SE FACE COMUNICAREA SI STOCAREA DATELOR
 void* udpclientreader(struct container *init)
 {
-
-letssend(&socr,receiverlen);
-
 gethostip(socr);
 		while(1)
 		{
@@ -69,10 +66,20 @@ gethostip(socr);
 }
 void* udpclienttransmitter()
 {
-      int i=0;
+  letssend(&socr,receiverlen);
+  memset((char*)&transmitter,0,sizeof(transmitter));
+  transmitter.sin_family=AF_INET;
+  transmitter.sin_port=htons(5000);
+  transmitterlen=sizeof(transmitter);
+  inet_pton(AF_INET, "255.255.255.255", &transmitter.sin_addr);
+  int i=1;
+  char numar ;
       while(1)
       {
-        letssend(&soct,transmitterlen);
+
+        if(sendto(soct,"111",strlen("111"),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
+            err("Nu merge sendto");
+            i++;
          sleep(2);
       }
 }
@@ -106,7 +113,6 @@ void *motors(struct container *init)
 	{
 		case 'S': printf("Stop!\n");
 				  drive_s();
-
 				  delay((init->timp)*1000);
 				  if(miscareAnterioara=='F')
 				  	drive_f(vitezaAnterioara);
@@ -149,7 +155,6 @@ void threadcreator()
 {
 	 // Setup stuff:
    /* wiringPiSetup();
-
     softPwmCreate (M1_softPWM1, 0, 100);
     softPwmCreate (M1_softPWM2, 0, 100);
     softPwmCreate (M2_softPWM1, 0, 100);
@@ -165,6 +170,7 @@ void threadcreator()
   pthread_create(&t3,NULL,(void*)motors,init);
 	pthread_join(t1,NULL);
 	pthread_join(t2,NULL);
+  pthread_join(t3,NULL);
 
 }
 int main()

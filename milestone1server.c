@@ -39,7 +39,7 @@ void* udpclientreader()
 			err("Nu merge bind");
 
 				char buffer[255];
-
+				memset(buffer,0,sizeof(char )*255);
 	if(recvfrom(soc,buffer,strlen("hello server"),0,(struct sockaddr*)&receiver,&receiverlen)==-1)
 			err("Nu merge recvfrom");
 
@@ -51,9 +51,10 @@ void* udpclientreader()
 	int i=1;
 	while(1)
 	{
-		if(recvfrom(soc,buffer,strlen("hello server"),0,(struct sockaddr*)&receiver,&receiverlen)==-1)
+		if(recvfrom(soc,buffer,strlen("111"),0,(struct sockaddr*)&receiver,&receiverlen)==-1)
 			err("Nu merge recvfrom");
 		printf("%s \n",buffer);
+sleep(2);
 
 
 	}
@@ -126,14 +127,14 @@ void *udpserver()
 int main (void)
 {
   pthread_mutex_init(&mutex,NULL);
-	pthread_cond_init(&flag1_cv,NULL);
+	pthread_cond_init(&flag1_cv,NULL);	pthread_t t2;
 	pthread_t t1;
 	pthread_create(&t1,NULL,(void*)udpclientreader,NULL);
-	pthread_join(t1,NULL);
 
-	pthread_t t2;
+
+
 	pthread_create(&t2,NULL,(void*)udpserver,NULL);
 	pthread_join(t2,NULL);
-
+	pthread_join(t1,NULL);
 return 0;
 }

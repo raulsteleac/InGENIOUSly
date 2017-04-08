@@ -91,15 +91,15 @@ void setcontainer(char *buffer,struct container* init)
           init->viteza=init->viteza*10+(c-'0');
           i++;
       }
+    }
+      else
     init->timp=atoi(buffer+i);
-  }
-  else
-    init->timp=atoi(buffer+i);
+    
     if(init->directie=='F')
-      printf("Masina se va misca in fata cu viteza : %d in timp de : %d secunde\n",init->viteza,init->timp);
+      printf("Masina se va misca in fata cu viteza : %d in timp de \n",init->viteza);
     else
       if(init->directie=='B')
-      printf("Masina se va misca in spate cu viteza : %d in timp de : %d secunde \n",init->viteza,init->timp);
+      printf("Masina se va misca in spate cu viteza : %d \n",init->viteza);
         else if(init->directie=='S')
           printf("Masina va sta pe loc  in timp de : %d \n",init->timp);
 }
