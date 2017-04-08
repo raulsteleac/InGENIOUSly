@@ -103,12 +103,12 @@ void *udpserver()
 	printf("Received packet from %s : %d \n",inet_ntoa(client.sin_addr),ntohs(client.sin_port));
 	printf("Data received : %s\n",mesajclient);
 */
-
+	pthread_mutex_lock(&mutex);
 	while(flag1==0)
 	{
 		pthread_cond_wait(&flag1_cv,&mutex);
 	}
-
+	pthread_mutex_unlock(&mutex);
 	while(1)
 		{
 
