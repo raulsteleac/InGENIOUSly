@@ -19,7 +19,7 @@ void err(char *msg)
 	exit(1);
 }
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-int flag1,flag2;
+int flag1=0,flag2=0;
 pthread_cond_t flag1_cv,flag2_cv;
 
 void* udpclientreader()
