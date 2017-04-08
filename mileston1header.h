@@ -6,22 +6,19 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
 #include <errno.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <arpa/inet.h>
 // AICI INITIALIZEZ STRUCTURA BUFFERULI PENTRU MILESTONE I
 
-struct bufferul
+struct container
 {
  char directie;
- union
-   {
-     int viteza;
-     int timp;
-   }vt;
+ int viteza;
+ int timp;
+
 
 };
 void err(char *msg)
@@ -69,22 +66,41 @@ void letssend(int *soc,socklen_t receiverlen)
 }
 void letsreceive(int *soc,socklen_t receiverlen,char *buffer,struct sockaddr_in receiver)
 {
+
   if(recvfrom(*soc,buffer,255,0,(struct sockaddr*)&receiver,&receiverlen)==-1)
   err("Nu merge recvfrom");
 }
-void setbufferul(char *buffer,struct bufferul* init)
+void gethostip(int soc)
 {
+  struct ifreq ifr;
+  char iface[] = "wlx00160a2401d4";
+  ifr.ifr_addr.sa_family = AF_INET;
+  strncpy(ifr.ifr_name , iface , IFNAMSIZ-1);
+  ioctl(soc, SIOCGIFADDR, &ifr);
+  printf("\n Placuta are ip-adressul : %s \n",inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+}
+void setcontainer(char *buffer,struct container* init)
+{
+  int c,i=2;
   init->directie=buffer[0];
+  init->viteza=0;
   if(buffer[0]=='B' || buffer[0]=='F')
-    init->vt.viteza=atoi(buffer+2);
-    else
-      init->vt.timp=atoi(buffer+2);
+  {
+    while((c=buffer[i])!=' ')
+      {
+          init->viteza=init->viteza*10+(c-'0');
+          i++;
+      }
+    init->timp=atoi(buffer+i);
+  }
+  else
+    init->timp=atoi(buffer+i);
     if(init->directie=='F')
-      printf("Masina se va misca in fata cu viteza : %d \n",init->vt.viteza);
+      printf("Masina se va misca in fata cu viteza : %d in timp de : %d secunde\n",init->viteza,init->timp);
     else
       if(init->directie=='B')
-      printf("Masina se va misca in spate cu viteza : %d \n",init->vt.viteza);
+      printf("Masina se va misca in spate cu viteza : %d in timp de : %d secunde \n",init->viteza,init->timp);
         else if(init->directie=='S')
-          printf("Masina va sta pe loc  in timp de : %d \n",init->vt.timp);
+          printf("Masina va sta pe loc  in timp de : %d \n",init->timp);
 }
 #endif
