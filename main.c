@@ -43,7 +43,7 @@ void* afis()
 }
 
 // CLIENTUL UDP , AICI SE FACE COMUNICAREA SI STOCAREA DATELOR
-void* udpclientreader(struct container *init)
+void* udpclientreceiver(struct container *init)
 {
 gethostip(socr);
 		while(1)
@@ -165,7 +165,7 @@ void threadcreator()
 
 	initial();
 	pthread_t t1,t2,t3;
-	pthread_create(&t1,NULL,(void*)udpclientreader,init);
+	pthread_create(&t1,NULL,(void*)udpclientreceiver,init);
   pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
   pthread_create(&t3,NULL,(void*)motors,init);
 	pthread_join(t1,NULL);
