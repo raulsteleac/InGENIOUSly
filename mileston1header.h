@@ -50,18 +50,9 @@ void broadcastpermissioner(int *soc)
       err("Eroare la broadcast");
 
 }
-void letssend(int *soc,socklen_t receiverlen)
+void letssend(int *soc,socklen_t transmitterlen)
 {
-  //trimitere primei date ca semn de conectare
-
-  struct sockaddr_in receiver;
-  memset((char*)&receiver,0,sizeof(receiver));
-  receiver.sin_family=AF_INET;
-  receiver.sin_port=htons(5000);
-  receiverlen=sizeof(receiver);
-  inet_pton(AF_INET, "255.255.255.255", &receiver.sin_addr);
-
-  if(sendto(*soc,"Hello Server",strlen("Hello Server"),0,(struct sockaddr*)&receiver,receiverlen)==-1)
+  if(sendto(*soc,"Hello Server",strlen("Hello Server"),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
       err("Nu merge sendto");
 }
 void letsreceive(int *soc,socklen_t receiverlen,char *buffer,struct sockaddr_in receiver)
