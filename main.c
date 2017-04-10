@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mileston1header.h"
-//#include "motorDrive.h"
+#include "motorDrive.h"
 // TRATAREA ERRORILOR
 
 //DECLARAREA VARIABILELOR GLOBALE
@@ -29,10 +29,7 @@ void initial()
       pthread_cond_init(&flag2_cv,NULL);
       flag1=0;
       flag2=0;
-      initializesocket(&socr,receiverlen,receiver);
-      broadcastpermissioner(&socr);
-      initializesocket(&soct,transmitterlen,transmitter);
-      broadcastpermissioner(&soct);
+
 }
 //O AFISARE
 void* afis()
@@ -45,20 +42,38 @@ void* afis()
 // CLIENTUL UDP , AICI SE FACE COMUNICAREA SI STOCAREA DATELOR
 void* udpclientreceiver(struct container *init)
 {
-gethostip(socr);
+	char buffer2[255];
+	int soc;
+	struct sockaddr_in receiver;
+	socklen_t receiverlen;
+	if((soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+				err("Nu merge socket");
+	//setare conexiune , de unde primim datele
+	memset((char*)&receiver,0,sizeof(receiver));
+	receiver.sin_family=AF_INET;
+	receiver.sin_port=htons(5000);
+	receiverlen=sizeof(receiver);
+	inet_pton(AF_INET, "255.255.255.255", &receiver.sin_addr);
+	if(bind(soc,(struct sockaddr*)&receiver,sizeof(receiver))==-1)
+			err("Nu merge bind");
+printf("\n Clientul s-a conectat la : %s si portul %d\n",inet_ntoa(receiver.sin_addr),ntohs(receiver.sin_port));
+		int	i=0;
+gethostip(soc);
 		while(1)
 		{
 
-      letsreceive(&socr,receiverlen,buffer,receiver);
-      setcontainer(buffer,init);
+      letsreceive(&soc,receiverlen,buffer,receiver);
 
-//AICI TRANSMIT SEMNALUL CU SCOPA DE A ANUNTA CA S-A MODIFICAT MEMORIA , FLAGUL CV
-
+		if(strcmp(buffer,buffer2)!=0)
+		 {
+		 setcontainer(buffer,init);
 	     pthread_mutex_lock(&mutex);
 	     flag1=1;
 	     pthread_cond_signal(&flag1_cv);
 	     pthread_mutex_unlock(&mutex);
-  printf("Clinetul asteapta o comanda :\n" );
+	     printf("Clinetul asteapta o comanda :\n" );
+  		}
+  strcpy(buffer2,buffer);
 		}
 	close(socr);
 	return 0;
@@ -66,18 +81,23 @@ gethostip(socr);
 }
 void* udpclienttransmitter()
 {
-  letssend(&socr,receiverlen);
+ 
   memset((char*)&transmitter,0,sizeof(transmitter));
   transmitter.sin_family=AF_INET;
   transmitter.sin_port=htons(5000);
   transmitterlen=sizeof(transmitter);
   inet_pton(AF_INET, "255.255.255.255", &transmitter.sin_addr);
+ if((soct=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+          err("Nu merge socket");
+ broadcastpermissioner(&soct);
+
+sleep(0.1);
   int i=1;
   char numar ;
       while(1)
       {
 
-        if(sendto(soct,"111",strlen("111"),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
+        if(sendto(soct,buffer,strlen(buffer),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
             err("Nu merge sendto");
             i++;
          sleep(2);
@@ -86,17 +106,17 @@ void* udpclienttransmitter()
 // AICI V-A FI INTRODUSA FUNCTIA DE MISCARE A MOTOARELOR
 void *motors(struct container *init)
 {
-	//char miscareAnterioara;
-	//int vitezaAnterioara;
+	char miscareAnterioara;
+	int vitezaAnterioara;
 	while(1)
 	{
 
-	/*	if(init->directie!='S')
+		if(init->directie!='S')
 		{
 			 miscareAnterioara=init->directie;
 			 vitezaAnterioara=init->viteza;
 		}
-    */
+    
 	pthread_mutex_lock(&mutex);
 //AICI SE ASTEAPTA SEMNALUL
 	while(flag1==0)
@@ -108,7 +128,7 @@ void *motors(struct container *init)
 // DACA MEMORIA NU S-A SCHIMBAT FUNCTIA VA CONTINUA CU ACEEASI DEIRECTIE
 
 	if(flag1)
-	{/*
+	{
 	switch(init->directie)
 	{
 		case 'S': printf("Stop!\n");
@@ -140,7 +160,7 @@ void *motors(struct container *init)
           drive_s();
 				  break;
 		}
-		*/
+		
     if(init->directie=='B' || init->directie=='F')
 	     printf("%c %d %d\n",init->directie,init->viteza,init->timp);
     else
@@ -154,13 +174,13 @@ void *motors(struct container *init)
 void threadcreator()
 {
 	 // Setup stuff:
-   /* wiringPiSetup();
+    wiringPiSetup();
     softPwmCreate (M1_softPWM1, 0, 100);
     softPwmCreate (M1_softPWM2, 0, 100);
     softPwmCreate (M2_softPWM1, 0, 100);
     softPwmCreate (M2_softPWM2, 0, 100);
     printf("PWM  is running! Press CTRL+C to quit.\n");
-    */
+    
     //initializare thread-uri
 
 	initial();

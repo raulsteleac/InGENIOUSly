@@ -50,10 +50,19 @@ void broadcastpermissioner(int *soc)
       err("Eroare la broadcast");
 
 }
-void letssend(int *soc,socklen_t transmitterlen)
+void letssend(int *soc,socklen_t receiverlen)
 {
-  if(sendto(*soc,"Hello Server",strlen("Hello Server"),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
-      err("Nu merge sendto");
+  //trimitere primei date ca semn de conectare
+
+  struct sockaddr_in receiver;
+  memset((char*)&receiver,0,sizeof(receiver));
+  receiver.sin_family=AF_INET;
+  receiver.sin_port=htons(5000);
+  receiverlen=sizeof(receiver);
+  inet_pton(AF_INET, "255.255.255.255", &receiver.sin_addr);
+
+ // if(sendto(*soc,"Hello Server",strlen("Hello Server"),0,(struct sockaddr*)&receiver,receiverlen)==-1)
+  //    err("Nu merge sendto");
 }
 void letsreceive(int *soc,socklen_t receiverlen,char *buffer,struct sockaddr_in receiver)
 {
@@ -64,11 +73,11 @@ void letsreceive(int *soc,socklen_t receiverlen,char *buffer,struct sockaddr_in 
 void gethostip(int soc)
 {
   struct ifreq ifr;
-  char iface[] = "wlx00160a2401d4";
+  char iface[] = "wlan0";
   ifr.ifr_addr.sa_family = AF_INET;
   strncpy(ifr.ifr_name , iface , IFNAMSIZ-1);
   ioctl(soc, SIOCGIFADDR, &ifr);
-  printf("\n Placuta are ip-adressul : %s \n",inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+  printf("\n Raspberry pi-ul are ip-adressul : %s \n",inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
 }
 void setcontainer(char *buffer,struct container* init)
 {
@@ -82,15 +91,16 @@ void setcontainer(char *buffer,struct container* init)
           init->viteza=init->viteza*10+(c-'0');
           i++;
       }
+    init->timp=atoi(buffer+i);
     }
       else
     init->timp=atoi(buffer+i);
     
     if(init->directie=='F')
-      printf("Masina se va misca in fata cu viteza : %d in timp de \n",init->viteza);
+      printf("Masina se va misca in fata cu viteza : %d in timp de %d \n",init->viteza,init->timp);
     else
       if(init->directie=='B')
-      printf("Masina se va misca in spate cu viteza : %d \n",init->viteza);
+      printf("Masina se va misca in spate cu viteza : %d  in timp de %d \n",init->viteza,init->timp);
         else if(init->directie=='S')
           printf("Masina va sta pe loc  in timp de : %d \n",init->timp);
 }
