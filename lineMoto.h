@@ -1,5 +1,7 @@
 #include <wiringPi.h> // Include WiringPi library!
 #include <softPwm.h>
+#define rightMaxSpeed 97
+#define leftMaxSpeed 97
 
 const int M1_softPWM1 = 7;
 const int M1_softPWM2 = 0;
@@ -92,7 +94,15 @@ void motorTurn(int direction, int degrees)
 
 void motorPIDcontrol(int dutyC)
 {
-	go(dutyC - PIDvalue, dutyC + PIDvalue);
+    int rightMotorSpeed = dutyC + PIDvalue;
+    int leftMotorSpeed = dutyC - PIDvalue;
+
+    if (rightMotorSpeed > rightMaxSpeed ) rightMotorSpeed = rightMaxSpeed; // prevent the motor from going beyond max speed
+    if (leftMotorSpeed > leftMaxSpeed ) leftMotorSpeed = leftMaxSpeed; // prevent the motor from going beyond max speed
+    if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
+    if (leftMotorSpeed < 0) leftMotorSpeed = 0; // keep the motor speed positive
+
+	go(leftMotorSpeed, rightMotorSpeed);
 }
 
 void checkPIDvalues()
