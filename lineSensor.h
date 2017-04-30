@@ -21,10 +21,10 @@ Sensor Array 	Error Value
 */
 
 const int LF0 = 12;
-const int LF0 = 18;
-const int LF0 = 17;
-const int LF0 = 16;
-const int LF0 = 19;
+const int LF1 = 18;
+const int LF2 = 17;
+const int LF3 = 16;
+const int LF4 = 19;
 
 int lineSensor[5]={0, 0, 0, 0, 0};
 
