@@ -7,8 +7,8 @@
 //DECLARAREA VARIABILELOR GLOBALE
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
-int flag1,flag2,flag3;
-pthread_cond_t flag1_cv,flag2_cv,flag3_cv;
+int flag1,flag2,flag3,flag4;
+pthread_cond_t flag1_cv,flag2_cv,flag3_cv,flag4_cv;
 struct container * conti;
 int socr,soct;
 socklen_t receiverlen;
@@ -29,9 +29,14 @@ void initial()
       pthread_cond_init(&flag1_cv,NULL);
       pthread_cond_init(&flag2_cv,NULL);
       pthread_cond_init(&flag3_cv,NULL);
+      pthread_cond_init(&flag4_cv,NULL);
       flag1=0;
       flag2=0;
       flag3=0;
+      flag4=0;
+      conti->rfidwt=conti->rfidwt|3;
+      conti->rfidwt=conti->rfidwt<<4|1;
+
 }
 // CLIENTUL UDP , AICI SE FACE COMUNICAREA SI STOCAREA DATELOR
 void* udpclientreceiver(struct container *conti)
@@ -52,8 +57,7 @@ void* udpclientreceiver(struct container *conti)
 			err("Nu merge bind");
 printf("\n Clientul s-a conectat la : %s si portul %d\n",inet_ntoa(receiver.sin_addr),ntohs(receiver.sin_port));
 
-    conti->rfidwt=conti->rfidwt|3;
-    conti->rfidwt=conti->rfidwt<<4|1;
+
 
 char mine;
 mine=mine&0;
@@ -66,18 +70,24 @@ do{
   }
     while(strlen(buffer)<5);
     spargeremesajinitial(buffer,conti);
-      int i;
+
+/*
       printf("\n###########################TRASEU\n");
       for(i=0;i<strlen(conti->traseu);i++)
                 printf("%d %d \n",conti->traseu[i]>>4&15,conti->traseu[i]&15);
       printf("\n###########################\n");
+*/
 //trimitem semnalul ca instructiunile au fost receptionate
       pthread_mutex_lock(&mutex2);
       flag2=1;
-
-;
+      flag3=1;
+      flag4=1;
       pthread_cond_signal(&flag2_cv);
+      pthread_cond_signal(&flag3_cv);
+      pthread_cond_signal(&flag4_cv);
+
       pthread_mutex_unlock(&mutex2);
+
     //  pthread_mutex_lock(&mutex2);
 
       //
@@ -92,8 +102,6 @@ do{
 		   setcontainer(buffer,conti);
 	     pthread_mutex_lock(&mutex);
 	     flag1=1;
-       flag3=1;
-       pthread_cond_signal(&flag3_cv);
 	     pthread_cond_signal(&flag1_cv);
 	     pthread_mutex_unlock(&mutex);
 
@@ -128,21 +136,44 @@ void* udpclienttransmitter()
 
  state[0]=state[0]|1;
  state[1]=state[1]|3;
- state[2]=state[2]|(conti->tipmasina>>4&15);
- state[2]=state[2]<<4|conti->tipmasina&15;
- state[3]=state[3]|(conti->rfidwt>>4&15);
- state[3]=state[3]<<4|conti->rfidwt&15;
- state[4]=state[4]|3;
+ state[2]=state[2]|((conti->tipmasina>>4)&15);
+ state[2]=state[2]<<4|(conti->tipmasina&15);
+
 sleep(0.1);
-  int i=1;
-  char numar ;
+  int i=0,z=0,q=0;
       while(1)
       {
+        if(((state[3]>>4&15)!=(conti->rfidwt>>4&15)) && (state[3]&15)!=(conti->rfidwt&15))
+        {
+        state[3]=state[3]|(conti->rfidwt>>4&15);
+        state[3]=state[3]<<4|(conti->rfidwt&15);
+        i++;
+        }
+        if(i==1)
+        {
+          state[4]=state[4]|1;
+          z++;
+          if(z==30)
+          {
+            state[4]=state[4]|2;
+            z=0;i++;
+          }
+        }
+        if(i==2)
+         q++;
 
+        //if(i==3)
+        if(q==20)
+          state[4]=state[4]|3;
+        if(i==4)
+            i=0;
+
+        if(i!=0);
         if(sendto(soct,state,strlen(state),0,(struct sockaddr*)&transmitter,transmitterlen)==-1)
             err("Nu merge sendto");
             i++;
-         sleep(2);
+         usleep(100000);
+
       }
 }
 // AICI V-A FI INTRODUSA FUNCTIA DE MISCARE A MOTOARELOR
@@ -184,22 +215,18 @@ void *motors(struct container *conti)
 				  break;
 		case 'F': printf("Drive Forward!\n");
 				  drive_f(conti->viteza);
-          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'L': printf("Drive Left!\n");
 				  drive_l(conti->viteza);
-          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'R': printf("Drive Right!\n");
 				  drive_r(conti->viteza);
-          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'B': printf("Drive Back!\n");
 				  drive_b(conti->viteza);
-          sleep(conti->timp);
           drive_s();
 				  break;
 		}
@@ -218,12 +245,13 @@ void *rfiddriver(struct container *conti)
 {
   while (1)
   {
-  pthread_mutex_lock(&mutex);
-  while(flag1==0)
+  pthread_mutex_lock(&mutex2);
+  while(flag3==0)
   {
-    pthread_cond_wait(&flag1_cv,&mutex);
+    pthread_cond_wait(&flag3_cv,&mutex2);
   }
-  pthread_mutex_unlock(&mutex);
+
+  pthread_mutex_unlock(&mutex2);
   printf("###RFIDRFIDRFIDRFIDRFIDRFIDRFIDRFIDRFID####\n");
   sleep(1);
 }
@@ -232,12 +260,12 @@ void *lfdriver(struct container *conti)
 {
   while (1)
   {
-  pthread_mutex_lock(&mutex);
-  while(flag3==0)
+  pthread_mutex_lock(&mutex2);
+  while(flag4==0)
   {
-    pthread_cond_wait(&flag3_cv,&mutex);
+    pthread_cond_wait(&flag4_cv,&mutex2);
   }
-  pthread_mutex_unlock(&mutex);
+  pthread_mutex_unlock(&mutex2);
    printf("###LFLFLFLLFLFLFLFLFLLFLFLFLF####\n");
    sleep(1);
    }
