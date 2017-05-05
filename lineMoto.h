@@ -2,6 +2,7 @@
 #include <softPwm.h>
 #define rightMaxSpeed 97
 #define leftMaxSpeed 97
+#define adjTurn 500
 
 const int M1_softPWM1 = 7;
 const int M1_softPWM2 = 0;
