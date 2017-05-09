@@ -159,7 +159,6 @@ printf("1");
 
 void *rfiddriver(struct container *conti)
 {
-
     if (!bcm2835_init())
     {
       printf("bcm2835_init failed. Are you running as root??\n");
@@ -171,7 +170,6 @@ void *rfiddriver(struct container *conti)
       printf("bcm2835_spi_begin failedg. Are you running as root??\n");
       return 1;
     }
-
     InitRc522();
     uint8_t pTagType,d2[6];
     char status;
@@ -193,11 +191,9 @@ void *rfiddriver(struct container *conti)
              printf("\n");
            }
 }
-
     bcm2835_spi_end();
     bcm2835_close();
     return 0;
-
 }
 void *lfdriver(struct container *conti)
 {
