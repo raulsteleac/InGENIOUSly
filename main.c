@@ -1,47 +1,49 @@
 
 #include "mileston1header.h"
-#include "sensorsalgorithms.h"
+//#include "sensorsalgorithms.h"
 #include <unistd.h>
-#include <bcm2835.h>
-#include "rc522.h"
-#include "rfid.h"
-#include "motorControl.h"
+//#include <bcm2835.h>
+//#include "rc522.h"
+//#include "rfid.h"
+//#include "motorControl.h"
 // TRATAREA ERRORILOR
 
 //DECLARAREA VARIABILELOR GLOBALE
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
-int flag1,flag2,flag3,flag4;
-pthread_cond_t flag1_cv,flag2_cv,flag3_cv,flag4_cv;
+int flag1,rfwififlag,lfwififlag,flag4;
+pthread_cond_t flag1_cv,rfwififlag_cv,lfwififlag_cv,flag4_cv;
 
 struct container * conti;
-int soct;
+int socr,soct;
+socklen_t receiverlen;
 socklen_t transmitterlen;
 
 char buffer[8192];
 char state[5];
+struct sockaddr_in receiver;
 struct sockaddr_in transmitter;
 
 uint8_t data[6];
 uint32_t rfids[3][6];
 uint32_t rfx=0;
 
-int z=0;
+int z=0,oprire=0;
 void initial()
 {
       conti=(struct container *)malloc(sizeof(struct container));
 
-      pthread_mutex_init(&mutex,NULL);
+      pthread_mutex_init(&mutex1,NULL);
       pthread_mutex_init(&mutex2,NULL);
       pthread_cond_init(&flag1_cv,NULL);
-      pthread_cond_init(&flag2_cv,NULL);
-      pthread_cond_init(&flag3_cv,NULL);
+      pthread_cond_init(&rfwififlag_cv,NULL);
+      pthread_cond_init(&lfwififlag_cv,NULL);
       pthread_cond_init(&flag4_cv,NULL);
 
       flag1=0;
-      flag2=0;
-      flag3=0;
+      rfwififlag=0;
+      lfwififlag=0;
       flag4=0;
 
 	rfids[1][3]=0xE07C85D9;
@@ -50,10 +52,73 @@ void initial()
 	rfids[1][4]=0x00AB92CF;
 	rfids[2][3]=0X24ABB2E8;
 	rfids[2][2]=0xB3EDBA5C;
-       rfids[2][1]=0x4979FB4B;
+  rfids[2][1]=0x4979FB4B;
  	rfids[2][4]=0xC5ABDE3B;
 }
+/////////////////////////////////////
+/////////////////////////////////////
+/////////////////////////////////////
+void* udpclientreceiver(struct container *conti)
+{
+	char buffer2[255];
+	int soc;
+	struct sockaddr_in receiver;
+	socklen_t receiverlen;
+	if((soc=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+				err("Nu merge socket");
+	//setare conexiune , de unde primim datele
+	memset((char*)&receiver,0,sizeof(receiver));
+	receiver.sin_family=AF_INET;
+	receiver.sin_port=htons(5000);
+	receiverlen=sizeof(receiver);
+	inet_pton(AF_INET, "255.255.255.255", &receiver.sin_addr);
+	if(bind(soc,(struct sockaddr*)&receiver,sizeof(receiver))==-1)
+			err("Nu merge bind");
+printf("\n Clientul s-a conectat la : %s si portul %d\n",inet_ntoa(receiver.sin_addr),ntohs(receiver.sin_port));
+gethostip(soc);
 
+do{
+    letsreceive(&soc,receiverlen,buffer,receiver);
+  }
+    while(strlen(buffer)<5);
+      spargeremesajinitial(buffer,conti);
+      int i;
+      printf("\n###########################TRASEU\n");
+      for(i=0;i<conti->lungimetraseu;i++)
+                printf("%d %d \n",conti->traseu[i]>>4&15,conti->traseu[i]&15);
+      printf("\n###########################\n");
+    memset(buffer,0,sizeof(buffer));
+    // trimit semnal la  LFdriver si RFIDdriver ca am primit prima instructiune
+    pthread_mutex_lock(&mutex1);
+
+      rfwififlag=1;
+      lfwififlag=1;
+      pthread_cond_signal(&rfwififlag_cv);
+      pthread_cond_signal(&lfwififlag_cv);
+
+    pthread_mutex_unlock(&mutex1);
+    ////
+		while(1)
+		{
+    letsreceive(&soc,receiverlen,buffer,receiver);
+		if(strcmp(buffer,buffer2)!=0)
+		 {
+		   setcontainer(buffer,conti);
+
+
+	     printf("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" );
+  strcpy(buffer2,buffer);
+    }
+
+    }
+	close(socr);
+	return 0;
+
+}
+
+//|||||||||||||||||||||||||||||||||
+//|||||||||||||||||||||||||||||||||
+//|||||||||||||||||||||||||||||||||
 char rfiddecoder(uint32_t data)
 {
 
@@ -73,20 +138,11 @@ char rfiddecoder(uint32_t data)
     }
 return rf;
 }
+//0000000000000000000000000000000
+//0000000000000000000000000000000
+//0000000000000000000000000000000
 void* udpclienttransmitter()
 {
-
-  /*     pthread_mutex_lock(&mutex2);
-
-       flag3=1;
-       flag4=1;
-
-       pthread_cond_signal(&flag3_cv);
-       pthread_cond_signal(&flag4_cv);
-
-       pthread_mutex_unlock(&mutex2);
-*/
-
   memset((char*)&transmitter,0,sizeof(transmitter));
   transmitter.sin_family=AF_INET;
   transmitter.sin_port=htons(5000);
@@ -105,8 +161,7 @@ void* udpclienttransmitter()
   int i=0,sec=0;
       while(1)
   {
-	if(rfx!=0)
-	   conti->rfidwt=rfiddecoder(rfx);
+
 	printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
 	printf("  RFX : %X \n",rfx);
      if( conti->rfidwt!=state[2])
@@ -119,14 +174,14 @@ void* udpclienttransmitter()
     }
         if(i==1)
       		{
-            flag1=1;
+            oprire=1;
             state[3]=1;
             sec++;
           }
         if(sec==30)
            		{
                  state[3]=2;
-  		flag1=0;
+  		oprire=0;
                  sec=0;
 		 i++;
                }
@@ -143,15 +198,21 @@ void* udpclienttransmitter()
 
       }
 }
+
 // AICI V-A FI INTRODUSA FUNCTIA DE MISCARE A MOTOARELOR
-
-void *motors(struct container *conti)
-{
-}
-
+///ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+//ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+//ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 void *rfiddriver(struct container *conti)
 {
-
+  //astept semnal de la WIFIreader cum ca masina isi incepe traseul
+  pthread_mutex_lock(&mutex1);
+ while(rfwififlag==0)
+ {
+   pthread_cond_wait(&rfwififlag_cv,&mutex1);
+ }
+ pthread_mutex_unlock(&mutex1);
+ ////
     if (!bcm2835_init())
     {
       printf("bcm2835_init failed. Are you running as root??\n");
@@ -171,7 +232,10 @@ void *rfiddriver(struct container *conti)
     {
       status=PcdRequest(PICC_REQIDL,&pTagType);
       if(status==TAG_OK)
-        status=PcdAnticoll(PICC_ANTICOLL1 , data);
+        {
+          status=PcdAnticoll(PICC_ANTICOLL1 , data);
+
+        }
       int i;
       if(d2!=data)
 	      {
@@ -184,6 +248,11 @@ void *rfiddriver(struct container *conti)
 		                }
              printf("\n");
            }
+           if(rfx!=0)
+              {
+                conti->rfidwt=rfiddecoder(rfx);
+                conti->rfidtolf=conti->rfidwt;
+              }
 }
 
     bcm2835_spi_end();
@@ -191,8 +260,19 @@ void *rfiddriver(struct container *conti)
     return 0;
 
 }
+//VVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+//VVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+//VVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 void *lfdriver(struct container *conti)
 {
+  //astept semnal de la WIFIreader cum ca masina isi incepe traseul
+pthread_mutex_lock(&mutex1);
+while(lfwififlag==0)
+{
+ pthread_cond_wait(&lfwififlag_cv,&mutex1);
+}
+pthread_mutex_unlock(&mutex1);
+
 	//int sensor;
 	wiringPiSetup();
 softPwmCreate (M1_softPWM1, 0, 100);
@@ -200,7 +280,7 @@ softPwmCreate (M1_softPWM1, 0, 100);
     softPwmCreate (M2_softPWM1, 0, 100);
     softPwmCreate (M2_softPWM2, 0, 100);
 	while(1){
-	if(flag1==1)
+	if(oprire==1)
 		drive_s();
 else
 {
@@ -209,26 +289,31 @@ else
 		//sensor = digitalRead(4);
 	    mainLF();
 		printValues();
-}		
+}
     }
 
 return 0;
 }
+//#####################################
+//#####################################
+//#####################################
+
 void threadcreator()
 {
 
     //initializare thread-uri
 
 	initial();
-	pthread_t t2,t3,t4,t5;
-  pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
-pthread_create(&t3,NULL,(void*)motors,conti);
-  pthread_create(&t4,NULL,(void*)rfiddriver,NULL);
-  pthread_create(&t5,NULL,(void*)lfdriver,NULL);
-	pthread_join(t2,NULL);
- pthread_join(t3,NULL);
-  pthread_join(t4,NULL);
-  pthread_join(t5,NULL);
+	pthread_t t1,t2;//,t3,t4;
+ pthread_create(&t1,NULL,(void*)udpclientreceiver,NULL);
+ pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
+//  pthread_create(&t3,NULL,(void*)rfiddriver,NULL);
+//  pthread_create(&t4,NULL,(void*)lfdriver,NULL);
+	pthread_join(t1,NULL);
+  pthread_join(t2,NULL);
+ //pthread_join(t3,NULL);
+//  pthread_join(t4,NULL);
+
 }
 int main()
 {
