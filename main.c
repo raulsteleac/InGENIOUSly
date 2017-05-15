@@ -1,4 +1,5 @@
 
+
 #include "mileston1header.h"
 //#include "sensorsalgorithms.h"
 #include <unistd.h>
@@ -45,7 +46,7 @@ void initial()
       rfwififlag=0;
       lfwififlag=0;
       flag4=0;
-
+      memset( conti, 0, sizeof(*conti) );
 	rfids[1][3]=0xE07C85D9;
 	rfids[1][2]=0x587C18FC;
 	rfids[1][1]=0x337E55B8;
@@ -82,9 +83,10 @@ do{
   }
     while(strlen(buffer)<5);
       spargeremesajinitial(buffer,conti);
+      printf("am iesit");
       int i;
       printf("\n###########################TRASEU\n");
-      for(i=0;i<conti->lungimetraseu;i++)
+      for(i=0;i<strlen(conti->traseu);i++)
                 printf("%d %d \n",conti->traseu[i]>>4&15,conti->traseu[i]&15);
       printf("\n###########################\n");
     memset(buffer,0,sizeof(buffer));
@@ -122,7 +124,7 @@ do{
 char rfiddecoder(uint32_t data)
 {
 
-	int i,j,ok=0;
+	int i,j;
 	char rf=rf&0;
 	for(i=1;i<=2;i++)
 		{
@@ -132,7 +134,7 @@ char rfiddecoder(uint32_t data)
 				{
 				rf=rf|i;
 				rf=rf<<4|j;
-				ok=1;
+
 		    }
       }
     }
@@ -162,8 +164,8 @@ void* udpclienttransmitter()
       while(1)
   {
 
-	printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
-	printf("  RFX : %X \n",rfx);
+	//printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
+	//printf("  RFX : %X \n",rfx);
      if( conti->rfidwt!=state[2])
     {
           state[2]=0;
@@ -203,7 +205,7 @@ void* udpclienttransmitter()
 ///ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 //ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 //ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
-void *rfiddriver(struct container *conti)
+/*void *rfiddriver(struct container *conti)
 {
   //astept semnal de la WIFIreader cum ca masina isi incepe traseul
   pthread_mutex_lock(&mutex1);
@@ -297,22 +299,19 @@ return 0;
 //#####################################
 //#####################################
 //#####################################
-
+*/
 void threadcreator()
 {
-
-    //initializare thread-uri
+	 // Setup stuff:
 
 	initial();
-	pthread_t t1,t2;//,t3,t4;
- pthread_create(&t1,NULL,(void*)udpclientreceiver,NULL);
- pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
-//  pthread_create(&t3,NULL,(void*)rfiddriver,NULL);
-//  pthread_create(&t4,NULL,(void*)lfdriver,NULL);
+  pthread_t t1,t2;
+	pthread_create(&t1,NULL,(void*)udpclientreceiver,conti);
+  pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
+  //pthread_create(&t3,NULL,(void*)motors,conti);
 	pthread_join(t1,NULL);
-  pthread_join(t2,NULL);
- //pthread_join(t3,NULL);
-//  pthread_join(t4,NULL);
+	pthread_join(t2,NULL);
+
 
 }
 int main()
