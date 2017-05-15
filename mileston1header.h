@@ -36,7 +36,7 @@ struct container
  // line follower driver output area
  int lfdrout;
  // rfid driver output area
- int rfiddrout;
+ int rfidtolf;
 };
 void err(char *msg)
  {
@@ -106,23 +106,25 @@ void spargeremesajinitial(char *buffer,struct container *conti)
         if((buffer[i]&15)==3)
           {
             ok=0;
-            i++;
-            conti->tipmasina=buffer[i];
-            i++;
-            conti->lungimetraseu=buffer[i];
-            i++;
-          }
-
+            conti->tipmasina=buffer[i+1];
+                }
+    i=i+2;
+    conti->lungimetraseu=buffer[i];
+    i++;
     if(!ok)
     {
       if((buffer[i]>>4&15)==0)
         ex=0;
       else
         {
-          conti->traseu[j]=buffer[i];
-          j++;
+
+          for(j=0;j<conti->lungimetraseu;j++)
+          conti->traseu[j]=buffer[i+j];
+          break;
         }
     }
+    else
+    i+=conti->lungimetraseu;
     if(!ex)
       break;
         i++;
