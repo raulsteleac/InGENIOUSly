@@ -1,7 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
+
 #include "mileston1header.h"
-#include "motorDrive.h"
+//#include "motorDrive.h"
 // TRATAREA ERRORILOR
 
 //DECLARAREA VARIABILELOR GLOBALE
@@ -9,20 +8,20 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 int flag1,flag2;
 pthread_cond_t flag1_cv,flag2_cv;
-struct container * init;
+struct container * conti;
 int socr,soct;
 socklen_t receiverlen;
 socklen_t transmitterlen;
-char buffer[255];
+char buffer[8192];
 struct sockaddr_in receiver;
 struct sockaddr_in transmitter;
 //INITIALIZAREA VARIABILELOR GLOBALE
 
-void initial()
+void contiial()
 {
-      init=(struct container *)malloc(sizeof(struct container));
-      init->directie='F';
-      init->viteza=70;
+      conti=(struct container *)malloc(sizeof(struct container));
+      conti->directie='F';
+      conti->viteza=70;
       pthread_mutex_init(&mutex,NULL);
       pthread_mutex_init(&mutex2,NULL);
       pthread_cond_init(&flag1_cv,NULL);
@@ -35,12 +34,12 @@ void initial()
 void* afis()
 {
 
-     printf("%c %d %d\n",init->directie,init->viteza,init->timp);
+     printf("%c %d %d\n",conti->directie,conti->viteza,conti->timp);
      return 0;
 }
 
 // CLIENTUL UDP , AICI SE FACE COMUNICAREA SI STOCAREA DATELOR
-void* udpclientreceiver(struct container *init)
+void* udpclientreceiver(struct container *conti)
 {
 	char buffer2[255];
 	int soc;
@@ -57,31 +56,42 @@ void* udpclientreceiver(struct container *init)
 	if(bind(soc,(struct sockaddr*)&receiver,sizeof(receiver))==-1)
 			err("Nu merge bind");
 printf("\n Clientul s-a conectat la : %s si portul %d\n",inet_ntoa(receiver.sin_addr),ntohs(receiver.sin_port));
-		int	i=0;
+
 gethostip(soc);
+do{
+    letsreceive(&soc,receiverlen,buffer,receiver);
+  }
+    while(strlen(buffer)<5);
+      spargeremesajinitial(buffer,conti);
+      int i;
+      printf("\n###########################TRASEU\n");
+      for(i=0;i<strlen(conti->traseu);i++)
+                printf("%d %d \n",conti->traseu[i]>>4&15,conti->traseu[i]&15);
+      printf("\n###########################\n");
+    memset(buffer,0,sizeof(buffer));
 		while(1)
 		{
-
-      letsreceive(&soc,receiverlen,buffer,receiver);
-
+    letsreceive(&soc,receiverlen,buffer,receiver);
 		if(strcmp(buffer,buffer2)!=0)
 		 {
-		 setcontainer(buffer,init);
+		   setcontainer(buffer,conti);
 	     pthread_mutex_lock(&mutex);
 	     flag1=1;
 	     pthread_cond_signal(&flag1_cv);
 	     pthread_mutex_unlock(&mutex);
+
 	     printf("Clinetul asteapta o comanda :\n" );
-  		}
   strcpy(buffer2,buffer);
-		}
+    }
+
+    }
 	close(socr);
 	return 0;
 
 }
 void* udpclienttransmitter()
 {
- 
+
   memset((char*)&transmitter,0,sizeof(transmitter));
   transmitter.sin_family=AF_INET;
   transmitter.sin_port=htons(5000);
@@ -104,19 +114,20 @@ sleep(0.1);
       }
 }
 // AICI V-A FI INTRODUSA FUNCTIA DE MISCARE A MOTOARELOR
-void *motors(struct container *init)
+/*
+void *motors(struct container *conti)
 {
 	char miscareAnterioara;
 	int vitezaAnterioara;
 	while(1)
 	{
 
-		if(init->directie!='S')
+		if(conti->directie!='S')
 		{
-			 miscareAnterioara=init->directie;
-			 vitezaAnterioara=init->viteza;
+			 miscareAnterioara=conti->directie;
+			 vitezaAnterioara=conti->viteza;
 		}
-    
+
 	pthread_mutex_lock(&mutex);
 //AICI SE ASTEAPTA SEMNALUL
 	while(flag1==0)
@@ -129,65 +140,65 @@ void *motors(struct container *init)
 
 	if(flag1)
 	{
-	switch(init->directie)
+	switch(conti->directie)
 	{
 		case 'S': printf("Stop!\n");
 				  drive_s();
-				  delay((init->timp)*1000);
+				  delay((conti->timp)*1000);
 				  if(miscareAnterioara=='F')
 				  	drive_f(vitezaAnterioara);
 				  else
 				  	drive_b(vitezaAnterioara);
 				  break;
 		case 'F': printf("Drive Forward!\n");
-				  drive_f(init->viteza);
-          sleep(init->timp);
+				  drive_f(conti->viteza);
+          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'L': printf("Drive Left!\n");
-				  drive_l(init->viteza);
-          sleep(init->timp);
+				  drive_l(conti->viteza);
+          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'R': printf("Drive Right!\n");
-				  drive_r(init->viteza);
-          sleep(init->timp);
+				  drive_r(conti->viteza);
+          sleep(conti->timp);
           drive_s();
 				  break;
 		case 'B': printf("Drive Back!\n");
-				  drive_b(init->viteza);
-          sleep(init->timp);
+				  drive_b(conti->viteza);
+          sleep(conti->timp);
           drive_s();
 				  break;
 		}
-		
-    if(init->directie=='B' || init->directie=='F')
-	     printf("%c %d %d\n",init->directie,init->viteza,init->timp);
+
+    if(conti->directie=='B' || conti->directie=='F')
+	     printf("%c %d %d\n",conti->directie,conti->viteza,conti->timp);
     else
-      printf("%c %d\n",init->directie,init->timp );
+      printf("%c %d\n",conti->directie,conti->timp );
 	flag1=0;
 	}
 	}
 	return 0;
 }
-
+*/
 void threadcreator()
 {
 	 // Setup stuff:
-    wiringPiSetup();
+  /*  wiringPiSetup();
     softPwmCreate (M1_softPWM1, 0, 100);
     softPwmCreate (M1_softPWM2, 0, 100);
     softPwmCreate (M2_softPWM1, 0, 100);
     softPwmCreate (M2_softPWM2, 0, 100);
     printf("PWM  is running! Press CTRL+C to quit.\n");
-    
-    //initializare thread-uri
+*/
+    //contiializare thread-uri
 
-	initial();
+	contiial();
 	pthread_t t1,t2,t3;
-	pthread_create(&t1,NULL,(void*)udpclientreceiver,init);
+	pthread_create(&t1,NULL,(void*)udpclientreceiver,conti);
   pthread_create(&t2,NULL,(void*)udpclienttransmitter,NULL);
-  pthread_create(&t3,NULL,(void*)motors,init);
+  //pthread_create(&t3,NULL,(void*)motors,conti);
 	pthread_join(t1,NULL);
 	pthread_join(t2,NULL);
   pthread_join(t3,NULL);
