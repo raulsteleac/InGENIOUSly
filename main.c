@@ -86,8 +86,8 @@ do{
       printf("am iesit");
       int i;
       printf("\n###########################TRASEU\n");
-      for(i=0;i<strlen(conti->traseu);i++)
-                printf("%d %d \n",conti->traseu[i]>>4&15,conti->traseu[i]&15);
+      for(i=0;i<conti->lungimetraseu;i++)
+                printf("%d \n",conti->traseu[i]);
       printf("\n###########################\n");
     memset(buffer,0,sizeof(buffer));
     // trimit semnal la  LFdriver si RFIDdriver ca am primit prima instructiune
