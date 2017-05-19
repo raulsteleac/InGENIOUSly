@@ -19,8 +19,8 @@ struct container
 // aici stochez traseul de la wifi -reader
  unsigned char tipmasina ;
  unsigned char semnatura [5];
-char traseu [1024];
-int lungimetraseu;
+ unsigned char traseu [1024];
+ unsigned char lungimetraseu;
 //wifi transmitter / rfid
 // aici e campul impartasit de wifi transmitter si rfid de unde wifi tr va trimite pozitia curenta ciclic
  int rfidwt;
@@ -36,7 +36,7 @@ int lungimetraseu;
  // line follower driver output area
  int lfdrout;
  // rfid driver output area
- int rfidtolf;
+ int rfiddrout;
 };
 void err(char *msg)
  {
@@ -97,50 +97,36 @@ void gethostip(int soc)
   printf("\n Raspberry pi-ul are ip-adressul : %s \n",inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
 }
 
-void spargeremesajinitial(char *buffer,struct container * conti)
+void spargeremesajinitial(char *buffer,struct container *conti)
 {
-  int i=1,ok=1,j,k=0;
-  int ln=0;
-  printf("am intrat");
-  while(buffer[i]!='\0' && k==0 && strlen(buffer+3)>1)
+  int i=1,ok=1,ex=1,j=0;
+  while(buffer[i]!='\0')
   {
-printf("\nI %d \n",i);
-printf("%d \n",buffer[8]&15);
     if((buffer[i]>>4&15)==0)
         if((buffer[i]&15)==3)
           {
             ok=0;
-            printf("1\n");
-          (conti)->tipmasina=conti->tipmasina|(buffer[i+1]>>4&15);
-              printf("2\n");
-         (conti)->tipmasina=conti->tipmasina<<4|(buffer[i+1]&15);
-	  printf("\nTIP MASINA :%d%d\n",conti->tipmasina>>4&15,conti->tipmasina&15);
-    printf("2");
-	}
-    i=i+2;
-
-    ln=(buffer[i]>>4&15*10)+(buffer[i]&15);
-    printf("LN la I   :%d    %d\n",ln,i);
-
-    i++;
+            i++;
+            conti->tipmasina=buffer[i];
+            i++;
+            conti->lungimetraseu=buffer[i];
+            i++;
+          }
 
     if(!ok)
     {
-printf("zzzzzzzzzzzzzzzzz\n");
-          for(j=0;j<ln;j++)
-         conti->traseu[j]=buffer[i+j];
-         for(j=0;j<ln;j++)
-          printf("%d %d\n",conti->traseu[j]>>4&15,conti->traseu[j]&15);
-  // printf("LN :%d\n",strlen(conti->traseu));
-          break;
-	k=1;
-            }
-    else
-   i+=ln;
-printf(" 2 I %d \n",i);
-
-}
-//printf("XXXXXXXXXXXXXXX");
+      if((buffer[i]>>4&15)==0)
+        ex=0;
+      else
+        {
+          conti->traseu[j]=buffer[i];
+          j++;
+        }
+    }
+    if(!ex)
+      break;
+        i++;
+  }
 }
 
 void setcontainer(char *buffer,struct container* init)
