@@ -19,7 +19,7 @@ struct container
 // aici stochez traseul de la wifi -reader
  unsigned char tipmasina ;
  unsigned char semnatura [5];
-char traseu [1024];
+int traseu [1024];
 int lungimetraseu;
 //wifi transmitter / rfid
 // aici e campul impartasit de wifi transmitter si rfid de unde wifi tr va trimite pozitia curenta ciclic
@@ -128,9 +128,9 @@ printf("%d \n",buffer[8]&15);
     {
 printf("zzzzzzzzzzzzzzzzz\n");
           for(j=0;j<ln;j++)
-         conti->traseu[j]=buffer[i+j];
+         conti->traseu[j]=(buffer[i+j]>>4&15)*10+(buffer[i+j]&15);
          for(j=0;j<ln;j++)
-          printf("%d %d\n",conti->traseu[j]>>4&15,conti->traseu[j]&15);
+          printf("%d  \n",conti->traseu[j]);
   // printf("LN :%d\n",strlen(conti->traseu));
           break;
 	k=1;
