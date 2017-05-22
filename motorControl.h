@@ -1,13 +1,15 @@
-
-
 #include <wiringPi.h> // Include WiringPi library!
 #include <softPwm.h>
 
 #define FOLLOWING_LINE 1
 #define STOPPED 2
 #define NO_LINE 3
+#define LEFT 4
+#define RIGHT 5
+#define FWD 6
 #define rightMaxSpeed 30
 #define leftMaxSpeed 30
+#define globalSpeed 25
 #define adjTurn 500
 
 const int M1_softPWM1 = 7;
@@ -27,6 +29,19 @@ const int LF2 = 25;
 const int LF3 = 23;
 const int LF4 = 4;
 int mode;
+int map;
+int counter;
+int mapPointer = -2;
+
+//---------------------------
+const int adj = 0; 
+float adjTurn = 8;
+int adjGoAndTurn = 800;
+THRESHOLD = 150
+const int power = 250; 
+const int iniMotorPower = 250; 
+int extraInch = 200;
+//--------------------------------
 
 int lineSensor[5]={0, 0, 0, 0, 0};
 
@@ -110,16 +125,120 @@ void go(int speedLeft, int speedRight) {  // parameters will be positive or nega
 	go(leftMotorSpeed, rightMotorSpeed);
 }
 
+void runExtraInch()
+{
+  motorPIDcontrol();
+  delay(extraInch);
+  drive_s();
+}
+
 void drive_s(){
 	go(0,0);
 		}
+
+void drive_l(int dutyC){
+	printf("LEFT!");
+	go(-globalSpeed ,globalSpeed);
+		}
+
+void drive_r(int dutyC){
+	printf("RIGHT!");
+	go(globalSpeed ,-globalSpeed);      
+		}
+
+void motorTurn(int direction, int degrees)
+{
+  switch(direction)
+	{
+		
+		case LEFT: printf("Drive Left!\n");
+				  drive_l(globalSpeed);
+				  break;
+		case RIGHT: printf("Drive Right!\n");
+				  drive_r(globalSpeed);
+				  break;
+
+		}
+  delay (round(adjTurn*degrees+1));
+  drive_s();
+}
+
+void goAndTurn(int direction, int degrees)
+{
+  motorPIDcontrol();
+  delay(adjGoAndTurn);
+  motorTurn(direction, degrees);
+}
+
+void movementSignaling(int signal)
+{
+	
+}
+
+int getMapDecision(int i)
+{
+	// traseul din milestone1header : traseu[1024]
+	// va contine 34 , 53, 11 etc...
+	// 1. Citire mesaj moving in pentru a afla : currentPosition 
+	// 2. Comparare currentPosition cu nextMapDecision 
+	// 3. decodare => LEFT RIGHT FWD  
+	// 
+	//  mapPointer se va incrementa din 2 in 2 la fiecare moving in 
+	// IMPLEMENTAREA SEMNALIZARII LUMINOASE TOT AICI
+	myPos = (fw1[i]%10)-1;
+    nextPos = (fw1[i+1]%10)-1;
+    //printf("Curr: %d\n", myPos);
+    //printf("Next: %d\n", myPos);
+
+    if((myPos+1)%4==nextPos) {moveDecision = LEFT_TURN; printf("Decision: Left\n");movementSignaling(moveDecision);}
+    if((myPos+2)%4==nextPos) {moveDecision = FWD;printf("Decision: Forward\n");movementSignaling(moveDecision);}
+    if((myPos+3)%4==nextPos) {moveDecision = RIGHT_TURN;printf("Decision: Right\n");movementSignaling(moveDecision);}
+    return moveDecision;
+}
+
+
 void mainLF()
 {
     
         
         switch (mode)
-    {
-       
+    { 
+
+       case STOPPED:
+            //drive_s();
+			counter += 1;
+			if(counter == 2)
+			{
+				printf(" Middle -> Decision \n");
+				
+				map = getMapDecision(mapPointer);
+
+				switch (map)
+ 				 {
+    				case FWD:
+						readLineSensors();
+						calculatePID();
+                    	motorPIDcontrol(25);
+       					break;
+
+					case RIGHT_TURN:
+						goAndTurn (RIGHT, 90);
+						readLineSensors();
+						calculatePID();
+                    	motorPIDcontrol(25);
+       					break;
+
+					case LEFT_TURN:
+						goAndTurn (LEFT, 90);
+						readLineSensors();
+						calculatePID();
+                    	motorPIDcontrol(25);
+       					break;
+
+				}
+            previousError = 0;
+        break;
+
         case NO_LINE:
             drive_s();
             previousError = 0;
@@ -132,5 +251,3 @@ void mainLF()
     }
     
 }
-
-
