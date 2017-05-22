@@ -46,13 +46,13 @@ void initial()
       lfwififlag=0;
       transmitterflag=0;
       memset( conti, 0, sizeof(*conti) );
-	rfids[1][3]=0xE07C85D9;
-	rfids[1][2]=0x587C18FC;
-	rfids[1][1]=0x337E55B8;
-	rfids[1][4]=0x00AB92CF;
-	rfids[2][3]=0X24ABB2E8;
+	rfids[1][3]=0xC0D9857C;
+	rfids[1][2]=0x9DCF92AB;
+	rfids[1][1]=0xA0B8557E;
+	rfids[1][4]=0xC0FC187C;
+	rfids[2][3]=0X70D08A7C;
 	rfids[2][2]=0xB3EDBA5C;
-    rfids[2][1]=0x4979FB4B;
+    rfids[2][1]=0x804BFB79;
  	rfids[2][4]=0xC5ABDE3B;
 }
 
@@ -175,8 +175,9 @@ void* udpclienttransmitter()
   {
 	if(rfx!=0)
 	   conti->rfidwt=rfiddecoder(rfx);
-	//printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
-	//printf("  RFX : %X \n",rfx);
+	printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
+	printf("  RFX : %X \n",rfx);
+  	//	            printf("%d%d  %d%d  %d%d  %d%d  %d%d \n",data[0]>>4&15,data[0]&15,data[1]>>4&15,data[1]&15,data[2]>>4&15,data[2]&15,data[3]>>4&15,data[3]&15));
      if( conti->rfidwt!=state[3])
     {
           state[3]=0;
@@ -244,12 +245,13 @@ void *rfiddriver(struct container *conti)
       if(d2!=data)
 	      {
 			       rfx=0;
-			       rfx=data[1]|(data[2]<<8)|(data[3]<<16)|(data[4]<<24);
+			       rfx=data[3]|(data[2]<<8)|(data[1]<<16)|(data[0]<<24);
 
              for (i=0; i<5; i++)
 		           {
 			              d2[i]=data[i];
 		                }
+
           //   printf("\n");
            }
 }
