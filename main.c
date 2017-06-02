@@ -26,7 +26,7 @@ struct sockaddr_in receiver;
 struct sockaddr_in transmitter;
 
 uint8_t data[6];
-uint32_t rfids[3][6];
+uint32_t rfids[17][6];
 uint32_t rfx=0;
 
 int z=0,oprire=0;
@@ -46,14 +46,28 @@ void initial()
       lfwififlag=0;
       transmitterflag=0;
       memset( conti, 0, sizeof(*conti) );
-	rfids[1][3]=0xC0D9857C;
-	rfids[1][2]=0x9DCF92AB;
-	rfids[1][1]=0xA0B8557E;
-	rfids[1][4]=0xC0FC187C;
-	rfids[2][3]=0X70D08A7C;
-	rfids[2][2]=0xD5E8B2AB;
-  rfids[2][1]=0x804BFB79;
- 	rfids[2][4]=0x8B3BDEAB;
+      rfids[1][1]=0xA0B8557E;
+      rfids[1][2]=0xC0FC187C ;
+	  rfids[1][3]=0xC0D9857C;
+	  rfids[1][4]=0x9DCF92AB;
+	  rfids[2][1]=0x804BFB79;
+	  rfids[2][2]=0xB0F4157C;
+	  rfids[2][3]=0X70D08A7C;
+      rfids[2][4]=0xB0DE0D7C;
+ 	  rfids[3][1]=0xE0D9817C;
+	  rfids[3][2]=0x00F28D7C;
+	  rfids[3][3]=0X7012897C;
+     // rfids[3][4]=0x2066FB79;     
+ 	  rfids[4][1]=0x2066FB79;
+	  rfids[4][2]=0x2057187C;
+	  rfids[4][3]=0X2035887C;
+      rfids[5][4]=0xA0388d7C;     
+      rfids[5][4]=0xC0CE1B7C;      
+      rfids[14][0]=0x2B5063D0;
+      rfids[14][1]=0x2B5A64D0;
+      rfids[14][2]=0xD0524600;
+      rfids[15][3]=0x8B3BDEAB;
+      rfids[15][4]=0xD5E8B2AB;
 }
 
 /////////////////////////////////////
@@ -93,7 +107,8 @@ do{
         if((buffer[1]&15)!=3)
           if(flag1)
           { 
-           if ( (((buffer[3]>>4&15)==(conti->rfidwt>>4&15))&&((buffer[3]&15)==((conti->rfidwt&15)+1)%4) && (buffer[4]&15)!=3) || (((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1)%4 && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==3)  ) )
+                   printf("\n\n\n STOP !!!!!!!!!!! \n\n\n");
+           if ( (((buffer[3]>>4&15)==(conti->rfidwt>>4&15))&&((buffer[3]&15)==((conti->rfidwt&15)+1)%4) ) || (((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1)%4 && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==3)  ) )
                     {
                     stopprio=1;
                     printf("\n\n\n STOP !!!!!!!!!!! \n\n\n");
@@ -103,8 +118,8 @@ do{
                   }
           if(capat)
         {
-        
-          if( ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1) &&((buffer[3]&15)==((conti->rfidwt&15)+2)%4) ) || ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1)%4 && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==2) ) )
+           
+          if( ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15)) &&((buffer[3]&15)==((conti->rfidwt&15)+2)%4) ) || ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15))%4 && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==2) ) )
                  {
                     stopprio=1;
                     printf("\n\n\n STOP  @@@@@@@\n\n\n");
