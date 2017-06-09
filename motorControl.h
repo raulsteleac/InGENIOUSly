@@ -22,8 +22,8 @@ const int M1_softPWM2 = 0;
 const int M2_softPWM1 = 2;
 const int M2_softPWM2 = 3;
 const int STOP_softPWM = 7;
-const int LEFT_softPWM = 29;
-const int RIGHT_softPWM = 31;
+const int LEFT_softPWM = 22;
+const int RIGHT_softPWM = 21;
 float Kp=30;
 float Ki=0;
 float Kd=0;
@@ -211,7 +211,7 @@ int stopSignaling(int moveDecision)
 }
 
 
-void onlyLF(struct container *conti)
+void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
 {
     
         
@@ -255,11 +255,11 @@ void onlyLF(struct container *conti)
     	printf("Curr: %d\n", in_state);
     	printf("Next: %d\n", out_state);
 
-    	if((in_state+1)%4==out_state) {moveDecision = LEFT_TURN; printf("Decision: Left\n");movementSignaling(moveDecision);//digitalWrite (LEFT_softPWM, HIGH) 
+    	if((in_state+1)%4==out_state) {moveDecision = LEFT_TURN; printf("Decision: Left\n");//digitalWrite (LEFT_softPWM, HIGH) 
     	;}
     	if((in_state+2)%4==out_state) {moveDecision = FWD;printf("Decision: Forward\n");movementSignaling(moveDecision)
     	;}
-    	if((in_state+3)%4==out_state) {moveDecision = RIGHT_TURN;printf("Decision: Right\n");movementSignaling(moveDecision);//digitalWrite (RIGHT_softPWM, HIGH) 
+    	if((in_state+3)%4==out_state) {moveDecision = RIGHT_TURN;printf("Decision: Right\n");//digitalWrite (RIGHT_softPWM, HIGH) 
     	;}
     	map = moveDecision;
 				//map = FWD;
@@ -278,36 +278,47 @@ void onlyLF(struct container *conti)
 					printf(" right \n");
 						//goAndTurn (RIGHT, 90);
 						//drive_r(40);
+							*ledRight=1;
+	   		  printf("\n\nRIGHT");
 						runExtraInch();
-					/*	lineSensor[4] = digitalRead(LF4);
-						while(lineSensor[4])
+						lineSensor[4] = digitalRead(LF4);
+						while(!lineSensor[4])
 						{	
 							lineSensor[4] = digitalRead(LF4);
 							go(-40, 40);
-						} */
-						go(-40, 40);
-						delay(TURNCALIBTIME);
+							delay(100);
+							lineSensor[4] = digitalRead(LF4);
+						} 
+						//go(-40, 40);
+						//delay(TURNCALIBTIME);
 						readLineSensors();
 						calculatePID();
                     				motorPIDcontrol(PIDSPD);
+                    		*ledRight=0;
        					break;
 
 					case LEFT_TURN:
 					     printf(" rleft \n");
 						//goAndTurn (LEFT, 90);
 						//drive_l(40);
+						*ledLeft=1;
 						runExtraInch();
-						/* lineSensor[0] = digitalRead(LF0);
-						while(lineSensor[0])
+				   		  printf("\n\nLEFT");
+						 
+						  lineSensor[0] = digitalRead(LF0);
+						while(!lineSensor[0])
 						{	
 							lineSensor[0] = digitalRead(LF0);
 							go(40, -40);
-						} */
-						go(40, -40);
-						delay(TURNCALIBTIME);
+							delay(100);
+							lineSensor[0] = digitalRead(LF0);
+						} 
+						//go(40, -40);
+						//delay(TURNCALIBTIME);
 						readLineSensors();
 						calculatePID();
-                    				motorPIDcontrol(PIDSPD);
+                    	motorPIDcontrol(PIDSPD);
+       							*ledLeft=0;
        					break;
 
 				} }
