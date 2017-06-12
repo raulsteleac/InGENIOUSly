@@ -89,10 +89,10 @@ if(rfx!=0)
  conti->rfidwt=rfiddecoder(rfx,rfids);
 printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
 printf("  RFX : %X \n",rfx);
-     if(conti->rfidwt!=state[3] )
+     if(conti->rfidwt!=state[3]  &&( (conti->rfidwt>>4&15)!=14))
       {
-          if((conti->rfidwt>>4&15)==(state[3]>>4&15) )
-            { 
+          if((conti->rfidwt>>4&15)==(state[3]>>4&15))
+                       { 
       
               if(state[4]!=1)
                 if(state[3]!=0)
@@ -100,8 +100,8 @@ printf("  RFX : %X \n",rfx);
                     state[3]=0;
                     state[3]=state[3]|(conti->rfidwt>>4&15);
                     state[3]=state[3]<<4|(conti->rfidwt&15);
-                    if( (conti->rfidwt>>4&15)!=14)
-                    state[4]=(state[4])%4+1;
+                   
+                 		   state[4]=(state[4])%4+1;
                   
                   }	
                if(((state[4]))==4)
@@ -116,7 +116,7 @@ printf("  RFX : %X \n",rfx);
               state[4]=1;
               }
             }
-   if((state[3]>>4&15)==14)
+   if((conti->rfidwt>>4&15)==14)
    							*flag3=1;
    			else
    							*flag3=0;	

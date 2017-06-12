@@ -12,9 +12,9 @@
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
-int flag1,rfwififlag,lfwififlag,transmitterflag,capat,stopprio,flagMiddle,ledLeft,ledRight;
+int flag1,rfwififlag,lfwififlag,transmitterflag,capat,stopprio,flagMiddle,ledLeft,ledRight,stopap;
 pthread_cond_t flag1_cv,rfwififlag_cv,lfwififlag_cv,transmitterflag_cv;
-
+int echipa;
 struct container * conti;
 int socr,soct;
 socklen_t receiverlen;
@@ -41,6 +41,16 @@ void initial()
       pthread_cond_init(&lfwififlag_cv,NULL);
       pthread_cond_init(&transmitterflag_cv,NULL);
 
+		conti->semnatura[0]=conti->semnatura[0]|'A';
+		conti->semnatura[0]=conti->semnatura[0]<<4|'A';
+		conti->semnatura[1]=conti->semnatura[1]|'B';
+		conti->semnatura[1]=conti->semnatura[1]<<4|'B';
+		conti->semnatura[2]=conti->semnatura[2]|'C';
+		conti->semnatura[2]=conti->semnatura[2]<<4|'C';
+		conti->semnatura[3]=conti->semnatura[3]|'D';
+		conti->semnatura[3]=conti->semnatura[3]<<4|'D';
+
+
       flag1=0;
       rfwififlag=0;
       lfwififlag=0;
@@ -66,11 +76,10 @@ void initial()
       rfids[14][0]=0x2B5063D0;
       rfids[14][1]=0x2B5A64D0;
       rfids[14][2]=0xD0524600;
+      rfids[14][3]=0x6B3364D0;
+      rfids[14][4]=0xDB3E64D0;
       rfids[13][3]=0x8B3BDEAB;
       rfids[13][2]=0xD5E8B2AB;
-      
-  
-
 }
 
 /////////////////////////////////////
@@ -116,17 +125,24 @@ do{
 		{
         memset(buffer,0,sizeof(buffer));
         letsreceive(&socr,receiverlen,buffer,receiver);
- if((buffer[1]&15)!=3)
+   
+ if((buffer[1]&15)!=3 && (buffer[0]&15)==1)
+          {
           if(flag1)
           { 
            if ( (((buffer[3]>>4&15)==(conti->rfidwt>>4&15))&&((buffer[3]&15)==((conti->rfidwt&15)+1)%4) && (buffer[4]&15)!=3) || (((buffer[3]>>4&15)==(conti->rfidwt>>4&15)) && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==3)  ) )
                     {
                      stopprio=1;
                     printf("\n\n\n STOP !!!!!!!!!!! \n\n\n");
+                    echipa=buffer[1];
                     }
                else
-                     stopprio=0;
-                   }
+                 if(echipa==buffer[1]  &&  (((buffer[3]>>4&15)==(conti->rfidwt>>4&15))&&((buffer[3]&15)==((conti->rfidwt&15)+3)%4) && (buffer[4]&15)!=3))
+                 				{
+                 						stopprio=0;
+                 						echipa=0;
+                 				}
+                    }
            if(capat)
          {
          
@@ -138,6 +154,18 @@ do{
                else
                      stopprio=0;
                    }
+                   }
+     if((buffer[0]&15)==2)
+     	{
+     	//	if(buffer[1]==conti->semnatura[0] && buffer[2]==conti->semnatura[1]  && buffer[3]==conti->semnatura[2] && buffer[4]==conti->semnatura[3])
+     					{
+     					stopap=1;
+     					printf("M-AM OPRIT");
+     	}
+     	}
+     	else
+     	  if((buffer[0]&15)==3)
+     		stopap=0;
 }
 	close(socr);
 	return 0;
@@ -219,80 +247,6 @@ void *rfiddriver(struct container *conti)
 
 }
 
-void *lfdriver()
-{
-
-
-pthread_mutex_lock(&mutex1);
-while(lfwififlag==0)
-{
- pthread_cond_wait(&lfwififlag_cv,&mutex1);
-}
-pthread_mutex_unlock(&mutex1);
-	//int sensor;
-	//wiringPiSetup();
-//softPwmCreate (M1_softPWM1, 0, 100);
-   // softPwmCreate (M1_softPWM2, 0, 100);
-    //softPwmCreate (M2_softPWM1, 0, 100);
-    //softPwmCreate (M2_softPWM2, 0, 100);
-    /*pinMode (STOP_softPWM, OUTPUT) ;
-    pinMode (LEFT_softPWM, OUTPUT) ;
-   pinMode (RIGHT_softPWM, OUTPUT) ;   // INIT BECURI
-    digitalWrite (STOP_softPWM, LOW) ;
-    digitalWrite (LEFT_softPWM, LOW) ;
-   digitalWrite (RIGHT_softPWM, LOW) ;         // INIT BECURI*/
-   //pinMode (STOP_softPWM, OUTPUT) ;
-  // digitalWrite (STOP_softPWM, LOW) ;
-           wiringPiSetup();
-    softPwmCreate (M1_softPWM1, 0, 100);
-    softPwmCreate (M1_softPWM2, 0, 100);
-    softPwmCreate (M2_softPWM1, 0, 100);
-    softPwmCreate (M2_softPWM2, 0, 100);
-         pinMode (STOP_softPWM, OUTPUT) ;
-    pinMode (LEFT_softPWM, OUTPUT) ;
-   pinMode (RIGHT_softPWM, OUTPUT) ;  
-	while(1){
-	if(flag1==1)
-	{
-		drive_s();
-   		digitalWrite (STOP_softPWM, HIGH) ;
-		/*if(mapPointer == 0 )
-		{
-			in_state = ((conti->traseu[0])%10)-1;
-			out_state = ((conti->traseu[1])%10)-1;
-			mapPointer += 1;
-		}
-		else
-		{
-			in_state = (out_state +2)%4;
-			out_state = ((conti->traseu[mapPointer])%10)-1;
-		} */
-		//controlLF(conti->traseu);
-		//mapPointer += 1;
-		while(flag1);
-	digitalWrite (STOP_softPWM, LOW) ;
-	onlyLF(conti,&ledRight,&ledLeft);
-	}
-		
-else
-{	
-	 readLineSensors();
-	    calculatePID();
-	    readLineSensors();
-		//sensor = digitalRead(4);
-	    //algLF(conti->traseu, flagMiddle);
-	onlyLF(conti,&ledRight,&ledLeft);
-		//printValues();
-}		
-    }
-
-return 0;
-
-}
-
-///#####################################
-//#####################################
-//#####################################
 
 void *leduri()
 {
@@ -346,12 +300,67 @@ void *leduri()
    		}
 
    }
-
-   
-   
-return 0;
 }
+   
+void *lfdriver()
+{
 
+
+pthread_mutex_lock(&mutex1);
+while(lfwififlag==0)
+{
+ pthread_cond_wait(&lfwififlag_cv,&mutex1);
+}
+pthread_mutex_unlock(&mutex1);
+	//int sensor;
+	//wiringPiSetup();
+//softPwmCreate (M1_softPWM1, 0, 100);
+   // softPwmCreate (M1_softPWM2, 0, 100);
+    //softPwmCreate (M2_softPWM1, 0, 100);
+    //softPwmCreate (M2_softPWM2, 0, 100);
+    /*pinMode (STOP_softPWM, OUTPUT) ;
+    pinMode (LEFT_softPWM, OUTPUT) ;
+   pinMode (RIGHT_softPWM, OUTPUT) ;   // INIT BECURI
+    digitalWrite (STOP_softPWM, LOW) ;
+    digitalWrite (LEFT_softPWM, LOW) ;
+   digitalWrite (RIGHT_softPWM, LOW) ;         // INIT BECURI*/
+   //pinMode (STOP_softPWM, OUTPUT) ;
+  // digitalWrite (STOP_softPWM, LOW) ;
+           wiringPiSetup();
+    softPwmCreate (M1_softPWM1, 0, 100);
+    softPwmCreate (M1_softPWM2, 0, 100);
+    softPwmCreate (M2_softPWM1, 0, 100);
+    softPwmCreate (M2_softPWM2, 0, 100);
+   pinMode (STOP_softPWM, OUTPUT) ;
+   pinMode (LEFT_softPWM, OUTPUT) ;
+   pinMode (RIGHT_softPWM, OUTPUT) ;  
+   
+   digitalWrite (STOP_softPWM, LOW );   //mod
+	while(1){
+	if(flag1 || stopap || stopprio)
+	{
+		drive_s();
+   		digitalWrite (STOP_softPWM, HIGH) ;
+		while(flag1|| stopap||stopprio);
+	digitalWrite (STOP_softPWM, LOW) ;
+	onlyLF(conti,&ledRight,&ledLeft);
+	}
+		
+else
+{	
+	 readLineSensors();
+	    calculatePID();
+	    readLineSensors();
+		//sensor = digitalRead(4);
+	    //algLF(conti->traseu, flagMiddle);
+	onlyLF(conti,&ledRight,&ledLeft);
+		//printValues();
+}		
+    }
+
+return 0;
+
+}
 void threadcreator()
 {
 	 // Setup stuff:
@@ -363,11 +372,13 @@ void threadcreator()
     pthread_create(&t3,NULL,(void*)rfiddriver,NULL);
     pthread_create(&t4,NULL,(void*)lfdriver,NULL);
         pthread_create(&t5,NULL,(void*)leduri,NULL);
+    
 	pthread_join(t1,NULL);
 	pthread_join(t2,NULL);
 	pthread_join(t3,NULL);
 	pthread_join(t4,NULL);
 	pthread_join(t5,NULL);
+
 }
 int main()
 {
