@@ -71,7 +71,7 @@ void readLineSensors()
   else if((lineSensor[0]== 0 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 0 )&&(lineSensor[3]== 0 )&&(lineSensor[4]== 0 ))  {mode = FOLLOWING_LINE; error = -2;}
   else if((lineSensor[0]== 1 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 0 )&&(lineSensor[3]== 0 )&&(lineSensor[4]== 0 ))  {mode = FOLLOWING_LINE; error = -3;}
   else if((lineSensor[0]== 1 )&&(lineSensor[1]== 0 )&&(lineSensor[2]== 0 )&&(lineSensor[3]== 0 )&&(lineSensor[4]== 0 ))  {mode = FOLLOWING_LINE; error = -4;}
-  else if((lineSensor[0]== 1 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 1 )&&(lineSensor[3]== 1 )&&(lineSensor[4]== 1 ))  {mode = STOPPED; error = 0;}
+  else if((lineSensor[0]== 1 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 1 )&&(lineSensor[3]== 1 )&&(lineSensor[4]== 1 ))  {mode = FOLLOWING_LINE; error = 0;}
   else if((lineSensor[0]== 0 )&&(lineSensor[1]== 0 )&&(lineSensor[2]== 0 )&&(lineSensor[3]== 0 )&&(lineSensor[4]== 0 ))  {mode = NO_LINE; error = 0;}
   //else if((lineSensor[0]== 1 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 1 )&&(lineSensor[3]== 1 )&&(lineSensor[4]== 0 ))  {mode = STOPPED; error = 0;}
   //else if((lineSensor[0]== 0 )&&(lineSensor[1]== 1 )&&(lineSensor[2]== 1 )&&(lineSensor[3]== 1 )&&(lineSensor[4]== 1 ))  {mode = STOPPED; error = 0;} // MULTIPLE CAZURI DE STOP -- DACA MASINA ARE O DEVIERE DE LA POZITIA NORMALA 
@@ -209,25 +209,12 @@ int stopSignaling(int moveDecision)
     //digitalWrite (STOP_softPWM, HIGH) ;
     return 0;
 }
-
-
-void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
+int ok;
+void decisionDecode(struct container *conti,int *ledRight,int *ledLeft, int flagMiddle)
 {
-    
-        
-        switch (mode)
-    { 
-
-       case STOPPED:
-            		drive_s();
-		//	digitalWrite (STOP_softPWM, HIGH) ;
-			delay(50);
-			printf(" LINE , %d \n", counter);
-            printf(" mapPointer , %d \n", mapPointer);
-	//		digitalWrite (STOP_softPWM, HIGH) ;
-	//		digitalWrite (STOP_softPWM, LOW) ;
-			
-			if((counter % 3 )==0){
+	if(!flagMiddle)
+		ok=0;
+	if((flagMiddle)==1 && !ok){
 			if(mapPointer == 0 )
 			{
 			printf(" traseu[0] , %d \n", conti->traseu[0]);
@@ -246,7 +233,7 @@ void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
 			}			
 			}
 
-			if((counter % 3 )==1)
+			if((flagMiddle )==1 && !ok)
 			{
 				printf(" Middle -> Decision \n");
 	
@@ -262,24 +249,18 @@ void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
     	if((in_state+3)%4==out_state) {moveDecision = RIGHT_TURN;printf("Decision: Right\n");//digitalWrite (RIGHT_softPWM, HIGH) 
     	;}
     	map = moveDecision;
-				//map = FWD;
-				//if (counter > 3) map = RIGHT_TURN;
-				// if (counter > 5) map = LEFT_TURN;
-				//if (counter > 8) map = FOLLOWING_LINE;
+
 				switch (map)
  				 {
-    				case FWD:
+ 	case FWD:
 						readLineSensors();
 						calculatePID();
-                    				motorPIDcontrol(PIDSPD);
+                    	motorPIDcontrol(PIDSPD);
        					break;
-
-					case RIGHT_TURN:
-					printf(" right \n");
-						//goAndTurn (RIGHT, 90);
-						//drive_r(40);
-							*ledRight=1;
-	   		  printf("\n\nRIGHT");
+	case RIGHT_TURN:
+						printf(" right \n");
+						*ledRight=1;
+	   		 			printf("\n\nRIGHT");
 						runExtraInch();
 						lineSensor[4] = digitalRead(LF4);
 						while(!lineSensor[4])
@@ -289,18 +270,14 @@ void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
 							delay(100);
 							lineSensor[4] = digitalRead(LF4);
 						} 
-						//go(-40, 40);
-						//delay(TURNCALIBTIME);
 						readLineSensors();
 						calculatePID();
                     				motorPIDcontrol(PIDSPD);
                     		*ledRight=0;
        					break;
 
-					case LEFT_TURN:
+	case LEFT_TURN:
 					     printf(" rleft \n");
-						//goAndTurn (LEFT, 90);
-						//drive_l(40);
 						*ledLeft=1;
 						runExtraInch();
 				   		  printf("\n\nLEFT");
@@ -313,8 +290,6 @@ void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
 							delay(100);
 							lineSensor[0] = digitalRead(LF0);
 						} 
-						//go(40, -40);
-						//delay(TURNCALIBTIME);
 						readLineSensors();
 						calculatePID();
                     	motorPIDcontrol(PIDSPD);
@@ -322,31 +297,11 @@ void onlyLF(struct container *conti,int *ledRight,int *ledLeft)
        					break;
 
 				} }
-			
+				ok=1;
 			    previousError = 0;
-            	counter += 1;
-                //mapPointer += 1;
-	    		runExtraInch();
-	    		readLineSensors();
-	//	digitalWrite (LEFT_softPWM, LOW) ;
-	//	digitalWrite (RIGHT_softPWM, LOW) ;
-				break;
-
-        case NO_LINE:
-            drive_s();
-            previousError = 0;
-        break;
-
-        case FOLLOWING_LINE:
-	    readLineSensors();
-            calculatePID();
-            motorPIDcontrol(PIDSPD);
-        break;
-    }
-    
 }
 
-void algLF(int *traseu, int flagMiddle)
+void onlyLF(struct container *conti,int *ledRight,int *ledLeft, int flagMiddle)
 {
     
         
@@ -354,147 +309,35 @@ void algLF(int *traseu, int flagMiddle)
     { 
 
        case STOPPED:
-            		drive_s();
-			//printf(" LINE , %d \n", counter);
-			//digitalWrite (STOP_softPWM, HIGH) ;
-			//digitalWrite (STOP_softPWM, LOW) ;
-			if((flagMiddle )==1)
-			{
-				printf(" Middle -> Decision \n");
-				
-				//map = getMapDecision(mapPointer,conti->traseu, 	in_state, out_state );
-				
-			
-				switch (map)
- 				 {
-    				case FWD:
-						readLineSensors();
-						calculatePID();
-                    				motorPIDcontrol(PIDSPD);
-       					break;
-
-					case RIGHT_TURN:
-					printf(" right \n");
-						//goAndTurn (RIGHT, 90);
-						//drive_r(40);
-						runExtraInch();
-						runExtraInch();
-					/*	lineSensor[4] = digitalRead(LF4);
-						while(lineSensor[4])
-						{	
-							lineSensor[4] = digitalRead(LF4);
-							go(-40, 40);
-						} */
-						go(-40, 40);
-						delay(TURNCALIBTIME);
-						readLineSensors();
-						calculatePID();
-                    				motorPIDcontrol(PIDSPD);
-       					break;
-
-					case LEFT_TURN:
-					     printf(" rleft \n");
-						//goAndTurn (LEFT, 90);
-						//drive_l(40);
-						runExtraInch();
-						runExtraInch();
-						/* lineSensor[0] = digitalRead(LF0);
-						while(lineSensor[0])
-						{	
-							lineSensor[0] = digitalRead(LF0);
-							go(40, -40);
-						} */
-						go(40, -40);
-						delay(TURNCALIBTIME);
-						readLineSensors();
-						calculatePID();
-                    				motorPIDcontrol(PIDSPD);
-       					break;
-
-				} }
-			
-			    previousError = 0;
-            	//counter += 1;
-	    		runExtraInch();
-	    		readLineSensors();
+            drive_s();
+			delay(50);
+			printf(" LINE , %d \n", counter);
+            printf(" mapPointer , %d \n", mapPointer);
+			decisionDecode( conti, ledRight,ledLeft, flagMiddle);
+	    	runExtraInch();
+	    	readLineSensors();
 				break;
-
         case NO_LINE:
             drive_s();
             previousError = 0;
         break;
-
         case FOLLOWING_LINE:
-	    readLineSensors();
+        if(flagMiddle)
+        {
+     	   decisionDecode( conti, ledRight,ledLeft, flagMiddle);
+	        readLineSensors();
+	    }
+	    else
+	    
+	    {
+	        readLineSensors();
             calculatePID();
             motorPIDcontrol(PIDSPD);
+        }
         break;
     }
     
 }
 
 
-void controlLF(int *traseu)
-{
-    
-        
-        switch (mode)
-    { 
-
-       case STOPPED:
-            //drive_s();
-			
-			if((counter % 3 )==1)
-			{
-				printf(" Middle -> Decision \n");
-				
-				//map = getMapDecision(mapPointer,conti->traseu, 	in_state, out_state );
-
-				switch (map)
- 				 {
-    				case FWD:
-						readLineSensors();
-						calculatePID();
-                    	motorPIDcontrol(PIDSPD);
-       					break;
-
-					case RIGHT_TURN:
-						//goAndTurn (RIGHT, 90);
-						//drive_r(40);
-						go(-40, 40);
-						delay(500);
-						readLineSensors();
-						calculatePID();
-                    	motorPIDcontrol(PIDSPD);
-       					break;
-
-					case LEFT_TURN:
-						//goAndTurn (LEFT, 90);
-						//drive_l(40);
-						go(40, -40);
-						delay(500);
-						readLineSensors();
-						calculatePID();
-                    	motorPIDcontrol(PIDSPD);
-       					break;
-
-				}
-            previousError = 0;
-            counter += 1;
-	    runExtraInch();
-break;
-
-        case NO_LINE:
-            drive_s();
-            previousError = 0;
-        break;
-
-        case FOLLOWING_LINE:
-            calculatePID();
-            motorPIDcontrol(PIDSPD);
-        break;
-    }
-    
-}
-}
 

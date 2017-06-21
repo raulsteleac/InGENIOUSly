@@ -24,7 +24,7 @@ char buffer[8192];
 char state[7];
 struct sockaddr_in receiver;
 struct sockaddr_in transmitter;
-
+int poz;
 uint8_t data[6];
 uint32_t rfids[17][6];
 uint32_t rfx=0;
@@ -56,30 +56,30 @@ void initial()
       lfwififlag=0;
       transmitterflag=0;
       memset( conti, 0, sizeof(*conti) );
-      rfids[1][1]=0xA0B8557E;
-      rfids[1][2]=0xC0FC187C ;
+      rfids[1][1]=0x2066FB79;
+      //rfids[1][2]=0xC0D9857C ;
 	  rfids[1][3]=0xC0D9857C;
-	  rfids[1][4]=0x9DCF92AB;
-	  rfids[2][1]=0x804BFB79;
-	  rfids[2][2]=0xB0F4157C;
-	  rfids[2][3]=0X70D08A7C;
-      rfids[2][4]=0xB0DE0D7C;
+	  rfids[1][4]=0x70D08A7C;
+	  rfids[2][1]=0XB0F4157C;
+	  rfids[2][2]=0xB0DE0D7C;
+	  rfids[2][3]=0x804BFB79;
+      rfids[2][4]=0xC0CE1B7C;
  	  rfids[3][1]=0xE0D9817C;
-	  rfids[3][2]=0x00F28D7C;
-	  rfids[3][3]=0X7012897C;
-     // rfids[3][4]=0x2066FB79;     
- 	  rfids[4][1]=0x2066FB79;
-	  rfids[4][2]=0x2057187C;
-	  rfids[4][3]=0X2035887C;
-      rfids[5][4]=0xA0388d7C;     
-      rfids[5][4]=0xC0CE1B7C;      
+	  rfids[3][2]=0x2035887C;
+	  rfids[3][3]=0x9DCF92AB;
+      rfids[3][4]=0x2057187C;     
+ 	  rfids[4][1]=0xA0B8557E;
+	  rfids[4][2]=0xA0388D7C;
+	  rfids[4][3]=0xC0FC187C;
+      rfids[5][4]=0x7012897C;     
+      rfids[6][2]=0x00F28D7C;      
       rfids[14][0]=0x2B5063D0;
       rfids[14][1]=0x2B5A64D0;
       rfids[14][2]=0xD0524600;
       rfids[14][3]=0x6B3364D0;
-      rfids[14][4]=0xDB3E64D0;
+      rfids[14][4]=0x6B3364D0;
       rfids[13][3]=0x8B3BDEAB;
-      rfids[13][2]=0xD5E8B2AB;
+      rfids[13][2]=0xDB3E64D0;
 }
 
 /////////////////////////////////////
@@ -90,16 +90,7 @@ void* udpclientreceiver(struct container *conti)
 //creare socket receiver
   initializesocketrecv(&socr,&receiverlen,&receiver);
   gethostip(socr);
-	int pin=23;
-	pinMode(pin,OUTPUT);
-		digitalWrite(pin,HIGH);
-		usleep(1000);
-		digitalWrite(pin,LOW);
-		usleep(1000);
-		digitalWrite(pin,HIGH);
-		usleep(1000);
-		digitalWrite(pin,LOW);
-		
+
 do{
     letsreceive(&socr,receiverlen,buffer,receiver);
   }
@@ -149,8 +140,8 @@ do{
                     }
            if(capat)
          {
-         
-         if( ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1) &&((buffer[3]&15)==((conti->rfidwt&15)+2)%4) ) || ( ((buffer[3]>>4&15)==(conti->rfidwt>>4&15)+1)%4 && ((buffer[3]&15)==4) && ((conti->rfidwt&15)==2) ) )
+         		
+         if(( (buffer[3]>>4&15)==(poz/10) && (buffer[3]&15)==(poz%10+2)%4 ))
                   {
                      stopprio=1;
                      printf("\n\n\n STOP  @@@@@@@\n\n\n");
@@ -201,6 +192,7 @@ void* udpclienttransmitter()
     usleep(100000);
     }
 }
+
 
 void *rfiddriver(struct container *conti)
 {
@@ -347,7 +339,7 @@ pthread_mutex_unlock(&mutex1);
    		digitalWrite (STOP_softPWM, HIGH) ;
 		while(flag1|| stopap||stopprio);
 	digitalWrite (STOP_softPWM, LOW) ;
-	onlyLF(conti,&ledRight,&ledLeft);
+	onlyLF(conti,&ledRight,&ledLeft, flagMiddle);
 	}
 		
 else
@@ -357,7 +349,7 @@ else
 	    readLineSensors();
 		//sensor = digitalRead(4);
 	    //algLF(conti->traseu, flagMiddle);
-	onlyLF(conti,&ledRight,&ledLeft);
+	onlyLF(conti,&ledRight,&ledLeft, flagMiddle);
 		//printValues();
 }		
     }
