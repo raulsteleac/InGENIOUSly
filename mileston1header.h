@@ -82,9 +82,10 @@ void broadcastpermissioner(int *soc)
 
 }
  int sec=0;
-void letssend(int *soct,socklen_t * transmitterlen,struct sockaddr_in * transmitter,struct container *conti,char *state,uint8_t *data,uint32_t rfx,uint32_t rfids[17][6],int *flag1,int *flag2,int *flag3,char (*rfiddecoder)(uint32_t ,uint32_t [17][6] ))
+void letssend(int *soct,socklen_t * transmitterlen,struct sockaddr_in * transmitter,struct container *conti,char *state,uint8_t *data,uint32_t rfx,uint32_t rfids[17][6],int *flag1,int *flag2,int *flag3,char (*rfiddecoder)(uint32_t ,uint32_t [17][6] ),int ok)
 {
- 
+ if(!ok)
+ {
 if(rfx!=0)
  conti->rfidwt=rfiddecoder(rfx,rfids);
 printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
@@ -133,8 +134,10 @@ if(sec==30)
                     sec=0;
                 }
 if(state[4]==3)
-    *flag2=1;
-    
+    	*flag2=1;
+    	else
+    	*flag2=0;
+}    
 if(state[4]!=0  && state[3]!=0  )
       if(sendto(*soct,state,strlen(state),0,(struct sockaddr*)transmitter,*transmitterlen)==-1)
           err("Nu merge sendto");
