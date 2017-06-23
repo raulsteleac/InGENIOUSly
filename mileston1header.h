@@ -90,7 +90,7 @@ if(rfx!=0)
  conti->rfidwt=rfiddecoder(rfx,rfids);
 printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
 printf("  RFX : %X \n",rfx);
-     if(conti->rfidwt!=state[3]  &&( (conti->rfidwt>>4&15)!=14))
+     if(conti->rfidwt!=state[3] )//&&( (conti->rfidwt>>4&15)!=14))
       {
           if((conti->rfidwt>>4&15)==(state[3]>>4&15))
                        { 
@@ -113,11 +113,11 @@ printf("  RFX : %X \n",rfx);
 	      state[3]=0;
               state[3]=state[3]|(conti->rfidwt>>4&15);
               state[3]=state[3]<<4|(conti->rfidwt&15);
-              if( (conti->rfidwt>>4&15)!=14)
+          if( (conti->rfidwt>>4&15)!=14)
               state[4]=1;
               }
             }
-   if((conti->rfidwt>>4&15)==14)
+   if((conti->rfidwt>>4&15)==14 )
    							*flag3=1;
    			else
    							*flag3=0;	
@@ -134,7 +134,9 @@ if(sec==30)
                     sec=0;
                 }
 if(state[4]==3)
-    *flag2=1;
+    	*flag2=1;
+    	else
+    	*flag2=0;
 }    
 if(state[4]!=0  && state[3]!=0  )
       if(sendto(*soct,state,strlen(state),0,(struct sockaddr*)transmitter,*transmitterlen)==-1)
