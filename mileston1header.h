@@ -82,31 +82,31 @@ void broadcastpermissioner(int *soc)
 
 }
  int sec=0;
-void letssend(int *soct,socklen_t * transmitterlen,struct sockaddr_in * transmitter,struct container *conti,char *state,uint8_t *data,uint32_t rfx,uint32_t rfids[17][6],int *flag1,int *flag2,int *flag3,char (*rfiddecoder)(uint32_t ,uint32_t [17][6] ),int ok)
+void letssend(int *soct,socklen_t * transmitterlen,struct sockaddr_in * transmitter,struct container *conti,char *state,uint8_t *data,uint32_t rfx,uint32_t rfids[17][6],int *flag1,int *flag2,int *flag3,int ok)
 {
  if(!ok)
  {
 if(rfx!=0)
- conti->rfidwt=rfiddecoder(rfx,rfids);
+// conti->rfidwt=rfiddecoder(rfx,rfids);
 printf(" DATA RECEIVED : %d%d   ",conti->rfidwt>>4&15,conti->rfidwt&15);
 printf("  RFX : %X \n",rfx);
      if(conti->rfidwt!=state[3] )//&&( (conti->rfidwt>>4&15)!=14))
       {
           if((conti->rfidwt>>4&15)==(state[3]>>4&15))
-                       { 
-      
+                       {
+
               if(state[4]!=1)
                 if(state[3]!=0)
                   {
                     state[3]=0;
                     state[3]=state[3]|(conti->rfidwt>>4&15);
                     state[3]=state[3]<<4|(conti->rfidwt&15);
-                   
+
                  		   state[4]=(state[4])%4+1;
-                  
-                  }	
+
+                  }
                if(((state[4]))==4)
-                  state[4]=1;    
+                  state[4]=1;
                 }
                 else
             {
@@ -120,8 +120,8 @@ printf("  RFX : %X \n",rfx);
    if((conti->rfidwt>>4&15)==14 )
    							*flag3=1;
    			else
-   							*flag3=0;	
-   		
+   							*flag3=0;
+
  if(state[4]==1)
 {
                  sec++;
@@ -137,7 +137,7 @@ if(state[4]==3)
     	*flag2=1;
     	else
     	*flag2=0;
-}    
+}
 if(state[4]!=0  && state[3]!=0  )
       if(sendto(*soct,state,strlen(state),0,(struct sockaddr*)transmitter,*transmitterlen)==-1)
           err("Nu merge sendto");
@@ -213,8 +213,3 @@ void afisaretraseupeecran(struct container *conti)
 
 
 #endif
-
-
-
-
-
