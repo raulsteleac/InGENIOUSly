@@ -9,6 +9,23 @@ void InitRc522(void)
 }
 
 
+
+char rfiddecoder(uint32_t data,uint32_t rfids[25][18])
+{
+
+	int i,j;
+	char rf=rf&0;
+	for(i=1;i<=24;i++)
+		{
+		for(j=1;j<=17;j++)
+			{
+			if(data==rfids[i][j])
+				{
+				rf=rf|i;
+				rf=rf<<4|j;
+		    }
+      }
+    }
 return rf;
 }
 
